@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import useThemeRender from '@/components/globalStyles/pageThemeRender'
 import Button from '@/components/button'
 import { PageStyles } from '@/components/globalStyles/pageStyles'
+import { CardStyles } from '@/components/globalStyles/cardStyles'
 import { MoveRight } from 'lucide-react-native'
 export default function Role() {
   const router = useRouter()
@@ -36,15 +37,15 @@ export default function Role() {
         <ThemedText type='description' style={styles.text}>Choose your journey to help us personalize your experience.</ThemedText>
       </ThemedView>
 
-      <ThemedView style={[styles.cardContainer, {marginTop: 30}]}>
+      <ThemedView style={[CardStyles.listCardContainer, {marginTop: 30}]}>
         <Pressable onPress={() => setSelectedRole('seeker')}>
 
-          <ThemedView style={[styles.card,
+          <ThemedView style={[CardStyles.listCard,
             {borderColor: selectedRole === 'seeker' ? Colors[colorScheme ?? 'light'].tint : colorThemeRenderer.borderColor}
           ]}>
-            <Image source={require('@/assets/images/bedroom.jpg')} style={styles.image} />
+            <Image source={require('@/assets/images/bedroom.jpg')} style={CardStyles.listImage} />
 
-            <ThemedView style={styles.cardText}>
+            <ThemedView style={CardStyles.listCardText}>
               <ThemedText type='subtitle' style={{color: colorThemeRenderer.oppositeTextColor}}>House Seeker</ThemedText>
               <ThemedText type='default'>Find your dream home from our curated verified listings.</ThemedText>
             </ThemedView>
@@ -53,12 +54,12 @@ export default function Role() {
         </Pressable>
 
         <Pressable onPress={() => setSelectedRole('landlord')}>
-          <ThemedView style={[styles.card,
+          <ThemedView style={[CardStyles.listCard,
             {borderColor: selectedRole === 'landlord' ? Colors[colorScheme ?? 'light'].tint : colorThemeRenderer.borderColor}
           ]}>
-            <Image source={require('@/assets/images/lanlord.jpg')} style={styles.image} />
+            <Image source={require('@/assets/images/lanlord.jpg')} style={CardStyles.listImage} />
 
-            <ThemedView style={styles.cardText}>
+            <ThemedView style={CardStyles.listCardText}>
               <ThemedText type='subtitle' style={{color: colorThemeRenderer.oppositeTextColor}}>Landlord</ThemedText>
               <ThemedText type='default'>List your property and connect with reliable tenants.</ThemedText>
             </ThemedView>
@@ -91,44 +92,8 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 25
   },
-  cardContainer: {
-    flex: 1,
-    flexDirection: 'column',
-    alignItems: 'center',
-    marginTop: 30,
-    padding: 20,
-    gap: 25
-  },
   text: {
     textAlign: 'center'
   },
-  card: {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
-    borderRadius: 26,
-    borderWidth: 0.7,
-    padding: 15,
-    width: '100%',
-    height: 150,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowRadius: 24,
-    elevation: 5
-
-  },
-  cardText: {
-    flex: 1,
-    flexDirection: 'column',
-    justifyContent: 'space-evenly',
-    height: '100%',
-    marginTop: 5
-  },
-  image: {
-    overflow: 'hidden',
-    width: 100,
-    height: '100%',
-    borderRadius: 24
-  }
+  
 })
