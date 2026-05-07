@@ -19,6 +19,7 @@ import mockData from '@/assets/data/mock_data.json'
 import { BedDouble, Bell, Heart, MapPin, Star } from 'lucide-react-native'
 import { Ionicons } from "@expo/vector-icons"
 import SearchBar from '@/components/searchBar'
+import { CardStyles } from '@/components/globalStyles/cardStyles'
 
 const { width } = Dimensions.get('window')
 
@@ -60,7 +61,7 @@ function LargeCard({ item }: { item: Listing }) {
   const [liked, setLiked] = useState(false)
 
   return (
-    <TouchableOpacity style={[styles.largeCard, {
+    <TouchableOpacity style={[CardStyles.flexLargeCard, {
         backgroundColor: colorScheme === 'light' ? '#fff' : Colors.dark.background,
         borderColor: colorThemeRenderer.borderColor
       }]} 
@@ -69,7 +70,7 @@ function LargeCard({ item }: { item: Listing }) {
       {/* Single image */}
       <Image
         source={{ uri: item.image[0] }}
-        style={styles.largeCardImage}
+        style={CardStyles.flexLargeCardImage}
         resizeMode="cover"
       />
       {/* Type badge */}
@@ -88,9 +89,9 @@ function LargeCard({ item }: { item: Listing }) {
       </TouchableOpacity>
 
       {/* Details */}
-      <View style={styles.cardDetails}>
+      <View style={CardStyles.flexCardDetails}>
         {/* Price row */}
-        <View style={styles.cardRow}>
+        <View style={CardStyles.flexCardRow}>
           <ThemedText type='price' style={{color: colorThemeRenderer.oppositeTextColor}}>
             {item.currency} {item.price.toLocaleString()}/{item.time}
           </ThemedText>
@@ -104,7 +105,7 @@ function LargeCard({ item }: { item: Listing }) {
         {/* Location */}
         <View style={styles.cardDetailsRowWithIcon}>
           <MapPin size={18} color={colorThemeRenderer.icon} />
-          <ThemedText style={styles.location} numberOfLines={1}>
+          <ThemedText style={CardStyles.cardLocation} numberOfLines={1}>
             {item.location}
           </ThemedText>
         </View>
@@ -129,7 +130,7 @@ function SmallCard({ item }: { item: Listing }) {
   const colorThemeRenderer = usePageThemeRender()
   const [liked, setLiked] = useState(false)
   return (
-    <TouchableOpacity style={[styles.smallCard, {
+    <TouchableOpacity style={[CardStyles.flexSmallCard, {
         backgroundColor: colorScheme === 'light' ? '#fff' : Colors.dark.background,
         borderColor: colorThemeRenderer.borderColor
       }]} 
@@ -137,7 +138,7 @@ function SmallCard({ item }: { item: Listing }) {
     >
       <Image
         source={{ uri: item.image[0] }}
-        style={styles.smallCardImage}
+        style={CardStyles.flexSmallCardImage}
         resizeMode="cover"
       />
       <View style={[styles.typeBadgeSmall, {backgroundColor: Colors[useColorScheme() ?? 'light'].tint}]}>
@@ -154,8 +155,8 @@ function SmallCard({ item }: { item: Listing }) {
         }
       </TouchableOpacity>
 
-      <View style={styles.smallCardDetails}>
-        <View style={styles.cardRow}>
+      <View style={CardStyles.flexSmallCardDetails}>
+        <View style={CardStyles.flexCardRow}>
           <ThemedText style={[styles.smallCardPrice, {
               color: colorThemeRenderer.oppositeTextColor
             }]}
@@ -172,7 +173,7 @@ function SmallCard({ item }: { item: Listing }) {
         {/*Location*/}
         <View style={styles.cardDetailsRowWithIcon}>
           <MapPin size={16} color={colorThemeRenderer.icon} />
-          <ThemedText style={styles.location} numberOfLines={1}>
+          <ThemedText style={CardStyles.cardLocation} numberOfLines={1}>
             {item.location}
           </ThemedText>
         </View>
@@ -330,8 +331,6 @@ export default function Index() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const PURPLE = '#6C63FF'
-const CARD_WIDTH = width * 0.62
-const SMALL_CARD_WIDTH = width * 0.48
 
 const styles = StyleSheet.create({
   contentContainer: {
@@ -414,22 +413,8 @@ const styles = StyleSheet.create({
   },
 
   /* Large card */
-  largeCard: {
-    width: CARD_WIDTH,
-    borderWidth: 1,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-    overflow: 'hidden',
-  },
-  largeCardImage: {
-    width: '100%',
-    height: 160,
-  },
+  
+
   typeBadge: {
     position: 'absolute',
     top: 12,
@@ -455,25 +440,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  cardDetails: {
-    padding: 12,
-    gap: 4,
-  },
-
   cardDetailsRowWithIcon: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5
-  },
-  location: {
-    fontSize: 14,
-    fontWeight: 500
-  },
-  cardRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
 
   ratingRow: {
@@ -487,21 +458,7 @@ const styles = StyleSheet.create({
   },
 
   /* Small card */
-  smallCard: {
-    width: SMALL_CARD_WIDTH,
-    borderRadius: 18,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 3,
-    overflow: 'hidden',
-  },
-  smallCardImage: {
-    width: '100%',
-    height: 130,
-  },
+  
   typeBadgeSmall: {
     position: 'absolute',
     top: 10,
@@ -521,10 +478,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.85)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  smallCardDetails: {
-    padding: 10,
-    gap: 3,
   },
   smallCardPrice: {
     fontSize: 16,
