@@ -215,6 +215,7 @@ export default function Index() {
       style={[PageStyles.container, { backgroundColor: bgColor }]}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.contentContainer}
+      stickyHeaderIndices={[1]}
     >
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <ThemedView style={styles.header}>
@@ -225,7 +226,7 @@ export default function Index() {
           </View>
           <View>
             <ThemedText style={styles.greeting}>Good evening</ThemedText>
-            <ThemedText style={styles.userName}>Joseph</ThemedText>
+            <ThemedText style={[styles.userName, {color: colorThemeRenderer.oppositeTextColor}]}>Joseph</ThemedText>
           </View>
         </View>
         <TouchableOpacity style={[styles.notifBtn, {
@@ -370,7 +371,7 @@ const styles = StyleSheet.create({
     color: '#888',
   },
   userName: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: '700',
   },
   notifBtn: {
