@@ -103,14 +103,14 @@ function LargeCard({ item }: { item: Listing }) {
           </View>
         </View>
         {/* Location */}
-        <View style={styles.cardDetailsRowWithIcon}>
+        <View style={CardStyles.cardDetailsRowWithIcon}>
           <MapPin size={18} color={colorThemeRenderer.icon} />
           <ThemedText style={CardStyles.cardLocation} numberOfLines={1}>
             {item.location}
           </ThemedText>
         </View>
         {/* Bedrooms */}
-        <View style={styles.cardDetailsRowWithIcon}>
+        <View style={CardStyles.cardDetailsRowWithIcon}>
           <BedDouble size={18} color={Colors[colorScheme ?? 'light'].tint}/>
           <ThemedText type='defaultSemiBold' style={[{
             color: colorThemeRenderer.secondaryFontColor
@@ -161,23 +161,23 @@ function SmallCard({ item }: { item: Listing }) {
               color: colorThemeRenderer.oppositeTextColor
             }]}
           >
-            {item.currency} {item.price.toLocaleString()}/{item.time.slice(0, 2)}
+            {item.currency} {item.price.toLocaleString()}/{item.time}
           </ThemedText>
           <View style={styles.ratingRow}>
-          <Star color={'#EAB308'} size={14} strokeWidth={2.5}/>
+            <Star color={'#EAB308'} size={14} strokeWidth={2.5}/>
             <ThemedText type='defaultSemiBold' style={{color: colorThemeRenderer.secondaryFontColor}}>
               {item.rating.toFixed(1)}
             </ThemedText>
           </View>
         </View>
         {/*Location*/}
-        <View style={styles.cardDetailsRowWithIcon}>
+        <View style={CardStyles.cardDetailsRowWithIcon}>
           <MapPin size={16} color={colorThemeRenderer.icon} />
           <ThemedText style={CardStyles.cardLocation} numberOfLines={1}>
             {item.location}
           </ThemedText>
         </View>
-        <View style={styles.cardDetailsRowWithIcon}>
+        <View style={CardStyles.cardDetailsRowWithIcon}>
           <BedDouble size={16} color={Colors[colorScheme ?? 'light'].tint}/>
           <ThemedText type='defaultSemiBold' style={[{
             color: colorThemeRenderer.secondaryFontColor
@@ -440,12 +440,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  cardDetailsRowWithIcon: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5
-  },
 
   ratingRow: {
     flexDirection: 'row',
