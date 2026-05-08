@@ -6,7 +6,7 @@ import usePageThemeRender from '@/components/globalStyles/pageThemeRender'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { useRouter } from 'expo-router'
 import SearchBar from '@/components/searchBar'
-import React, { useRef, useEffect, useState, useMemo } from 'react'
+import React, { useRef, useEffect, useState, useMemo, useCallback, memo } from 'react'
 import mockData from '@/assets/data/mock_data.json'
 import { CardStyles } from '@/components/globalStyles/cardStyles'
 import { PageStyles } from '@/components/globalStyles/pageStyles'
@@ -41,6 +41,163 @@ const nearYou = [...allListings]
   .sort((a, b) => b.rating - a.rating)
   .slice(10, 20)
 
+// ─── Optimized Listing Card Component - Memoized ──────────────────────────────
+interface ListingCardProps {
+  item: Listing
+  colorScheme: string
+  colorThemeRenderer: any
+}
+
+const ListingCard = memo(({ item, colorScheme, colorThemeRenderer }: ListingCardProps) => {
+  return (
+    <TouchableOpacity 
+      activeOpacity={0.9} 
+      onPress={() => null}
+      style={{ marginBottom: 16 }}
+    >
+      <ThemedView
+        style={[
+          CardStyles.listCard,
+          {
+            borderColor: colorThemeRenderer.borderColor,
+            backgroundColor: colorScheme === 'light' ? '#fff' : Colors.dark.background,
+          },
+        ]}
+      >
+        {/* Left side: Image */}
+        <Image
+          source={{ uri: item.image[0] }}
+          style={CardStyles.listImage}
+          resizeMode="cover"
+        />
+
+        {/* Right side: Content */}
+        <View style={CardStyles.listCardText}>
+          {/* Price and Type */}
+          <View style={CardStyles.flexCardRow}>
+            <ThemedText
+              style={{
+                fontSize: 16,
+                fontWeight: '700',
+                color: colorThemeRenderer.oppositeTextColor,
+              }}
+            >
+              {item.currency} {item.price.toLocaleString()}
+              <ThemedText style={{ fontSize: 12, fontWeight: '400' }}>
+                /{item.time.slice(0, 2)}
+              </ThemedText>
+            </ThemedText>
+            <ThemedText
+              style={{
+                fontSize: 12,
+                fontWeight: '500',
+                color: colorThemeRenderer.secondaryFontColor,
+              }}
+            >
+              {item.type}
+            </ThemedText>
+          </View>
+
+          {/* Location */}
+          <ThemedText
+            style={{
+              fontSize: 12,
+              fontWeight: '400',
+              color: colorThemeRenderer.secondaryFontColor,
+            }}
+            numberOfLines={1}
+          >
+            {item.location}
+          </ThemedText>
+
+          {/* Bedrooms and Rating */}
+          <View style={CardStyles.flexCardRow}>
+            <ThemedText
+              style={{
+                fontSize: 12,
+                fontWeight: '400',
+                color: colorThemeRenderer.secondaryFontColor,
+              }}
+            >
+              {item.bedrooms} Bedroom{item.bedrooms !== 1 ? 's' : ''}
+            </ThemedText>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <ThemedText
+                style={{
+                  fontSize: 12,
+                  fontWeight: '700',
+                  color: colorThemeRenderer.oppositeTextColor,
+                }}
+              >
+                {item.rating.toFixed(1)}
+              </ThemedText>
+              <ThemedText
+                style={{
+                  fontSize: 12,
+                  fontWeight: '400',
+                  color: colorThemeRenderer.secondaryFontColor,
+                }}
+              >
+                (251)
+              </ThemedText>
+            </View>
+          </View>
+        </View>
+      </ThemedView>
+    </TouchableOpacity>
+  )
+})
+
+ListingCard.displayName = 'ListingCard'
+
+// ─── Optimized Filter Chip Component - Memoized ──────────────────────────────
+interface FilterChipProps {
+  label: string
+  isActive: boolean
+  onPress: () => void
+  colorScheme?: keyof typeof Colors
+  colorThemeRenderer: any
+}
+
+const FilterChip = memo(({ label, isActive, onPress, colorScheme, colorThemeRenderer }: FilterChipProps) => {
+  return (
+    <TouchableOpacity
+      key={label}
+      style={[
+        PageStyles.filters,
+        isActive
+          ? { backgroundColor: Colors[colorScheme ?? 'light'].tint }
+          : { backgroundColor: colorThemeRenderer.secondaryBackground },
+        {
+          borderColor: colorThemeRenderer.borderColor,
+        },
+      ]}
+      onPress={onPress}
+      activeOpacity={0.6}
+    >
+      <ThemedText
+        style={[
+          PageStyles.filtersText,
+          isActive
+            ? { color: '#fff' }
+            : { color: colorThemeRenderer.secondaryFontColor },
+        ]}
+      >
+        {label}
+      </ThemedText>
+    </TouchableOpacity>
+  )
+})
+
+FilterChip.displayName = 'FilterChip'
+
+// ─── Main Search Component ────────────────────────────────────────────────────
 export default function Search() {
   const searchInputRef = useRef<TextInput>(null)
   const [searchValue, setSearchValue] = useState('')
@@ -58,6 +215,7 @@ export default function Search() {
   }, [])
 
   // ─── Filter listings based on active filter and search value ────────────────
+  // Memoized to prevent recalculation on every render
   const filteredListings = useMemo(() => {
     let filtered = [...allListings]
 
@@ -79,112 +237,34 @@ export default function Search() {
     return filtered
   }, [activeFilter, searchValue])
 
-  // ─── Listing Card Component ──────────────────────────────────────────────────
-  const ListingCard = ({ item }: { item: Listing }) => {
-    return (
-      <TouchableOpacity 
-        activeOpacity={0.9} 
-        onPress={() => null}
-        style={{ marginBottom: 16 }}
-      >
-        <ThemedView
-          style={[
-            CardStyles.listCard,
-            {
-              borderColor: colorThemeRenderer.borderColor,
-              backgroundColor: colorScheme === 'light' ? '#fff' : Colors.dark.background,
-            },
-          ]}
-        >
-          {/* Left side: Image */}
-          <Image
-            source={{ uri: item.image[0] }}
-            style={CardStyles.listImage}
-            resizeMode="cover"
-          />
+  // ─── Memoized render function for FlatList ────────────────────────────────────
+  const renderListingCard = useCallback(
+    ({ item }: { item: Listing }) => (
+      <ListingCard 
+        item={item} 
+        colorScheme={colorScheme ?? 'light'} 
+        colorThemeRenderer={colorThemeRenderer}
+      />
+    ),
+    [colorScheme, colorThemeRenderer]
+  )
 
-          {/* Right side: Content */}
-          <View style={CardStyles.listCardText}>
-            {/* Price and Type */}
-            <View style={CardStyles.flexCardRow}>
-              <ThemedText
-                style={{
-                  fontSize: 16,
-                  fontWeight: '700',
-                  color: colorThemeRenderer.oppositeTextColor,
-                }}
-              >
-                {item.currency} {item.price.toLocaleString()}
-                <ThemedText style={{ fontSize: 12, fontWeight: '400' }}>
-                  /{item.time.slice(0, 2)}
-                </ThemedText>
-              </ThemedText>
-              <ThemedText
-                style={{
-                  fontSize: 12,
-                  fontWeight: '500',
-                  color: colorThemeRenderer.secondaryFontColor,
-                }}
-              >
-                {item.type}
-              </ThemedText>
-            </View>
+  // ─── Memoized render function for filter chips ────────────────────────────────
+  const renderFilterChips = useCallback(() => {
+    return FILTERS.map((f) => (
+      <FilterChip
+        key={f}
+        label={f}
+        isActive={activeFilter === f}
+        onPress={() => setActiveFilter(f)}
+        colorScheme={colorScheme ?? 'light'}
+        colorThemeRenderer={colorThemeRenderer}
+      />
+    ))
+  }, [activeFilter, colorScheme, colorThemeRenderer])
 
-            {/* Location */}
-            <ThemedText
-              style={{
-                fontSize: 12,
-                fontWeight: '400',
-                color: colorThemeRenderer.secondaryFontColor,
-              }}
-              numberOfLines={1}
-            >
-              {item.location}
-            </ThemedText>
-
-            {/* Bedrooms and Rating */}
-            <View style={CardStyles.flexCardRow}>
-              <ThemedText
-                style={{
-                  fontSize: 12,
-                  fontWeight: '400',
-                  color: colorThemeRenderer.secondaryFontColor,
-                }}
-              >
-                {item.bedrooms} Bedroom{item.bedrooms !== 1 ? 's' : ''}
-              </ThemedText>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 4,
-                }}
-              >
-                <ThemedText
-                  style={{
-                    fontSize: 12,
-                    fontWeight: '700',
-                    color: colorThemeRenderer.oppositeTextColor,
-                  }}
-                >
-                  {item.rating.toFixed(1)}
-                </ThemedText>
-                <ThemedText
-                  style={{
-                    fontSize: 12,
-                    fontWeight: '400',
-                    color: colorThemeRenderer.secondaryFontColor,
-                  }}
-                >
-                  (251)
-                </ThemedText>
-              </View>
-            </View>
-          </View>
-        </ThemedView>
-      </TouchableOpacity>
-    )
-  }
+  // ─── Memoized key extractor for FlatList ──────────────────────────────────────
+  const keyExtractor = useCallback((item: Listing) => item.id, [])
 
   return (
     <ThemedView style={{ flex: 1 }}>
@@ -202,6 +282,7 @@ export default function Search() {
         ]}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 20 }}
+        scrollEventThrottle={16}  // Optimize scroll performance
       >
         {/* Results Count and Filter Section */}
         <ThemedView style={{ paddingHorizontal: 10, paddingVertical: 16 }}>
@@ -216,52 +297,60 @@ export default function Search() {
             {filteredListings.length} matches found
           </ThemedText>
 
-          {/* Filter Chips - Identical to index.tsx */}
+          {/* Filter Chips */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={PageStyles.filterRow}
+            scrollEventThrottle={16}  // Optimize scroll performance
           >
-            {FILTERS.map((f) => (
-              <TouchableOpacity
-                key={f}
-                style={[
-                  PageStyles.filters,
-                  activeFilter === f
-                    ? { backgroundColor: Colors[colorScheme ?? 'light'].tint }
-                    : { backgroundColor: colorThemeRenderer.secondaryBackground },
-                  {
-                    borderColor: colorThemeRenderer.borderColor,
-                  },
-                ]}
-                onPress={() => setActiveFilter(f)}
-              >
-                <ThemedText
-                  style={[
-                    PageStyles.filtersText,
-                    activeFilter === f
-                      ? { color: '#fff' }
-                      : { color: colorThemeRenderer.secondaryFontColor },
-                  ]}
-                >
-                  {f}
-                </ThemedText>
-              </TouchableOpacity>
-            ))}
+            {renderFilterChips()}
           </ScrollView>
         </ThemedView>
 
-        {/* Listings List */}
+        {/* Listings List - Optimized for Large Lists */}
         {filteredListings.length > 0 ? (
           <FlatList
             data={filteredListings}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => <ListingCard item={item} />}
+            keyExtractor={keyExtractor}
+            renderItem={renderListingCard}
             scrollEnabled={false}
             contentContainerStyle={{
               paddingHorizontal: 10,
               paddingTop: 8,
             }}
+            // ─── PERFORMANCE OPTIMIZATIONS FOR 450+ ITEMS ───────────────────
+            // Only render items visible on screen + buffer
+            initialNumToRender={10}           // Render first 10 items
+            maxToRenderPerBatch={10}          // Render max 10 items per batch
+            updateCellsBatchingPeriod={50}    // Update cells every 50ms
+            windowSize={10}                   // Keep 10 items in memory above/below viewport
+            removeClippedSubviews={true}      // Remove items outside viewport
+            // ─────────────────────────────────────────────────────────────
+            getItemLayout={(data, index) => ({
+              length: 166,  // 150px height + 16px margin
+              offset: 166 * index,
+              index,
+            })}
+            CellRendererComponent={({ item, index, ...props }) => (
+              <View {...props}>
+                {renderListingCard({ item: item as Listing })}
+              </View>
+            )}
+            // Avoid creating new objects on every render
+            ListEmptyComponent={
+              <ThemedView style={[PageStyles.emptyStateContainer, { marginTop: 40 }]}>
+                <ThemedText
+                  style={{
+                    fontSize: 16,
+                    fontWeight: '500',
+                    color: colorThemeRenderer.secondaryFontColor,
+                  }}
+                >
+                  No listings found
+                </ThemedText>
+              </ThemedView>
+            }
           />
         ) : (
           <ThemedView style={[PageStyles.emptyStateContainer, { marginTop: 40 }]}>
