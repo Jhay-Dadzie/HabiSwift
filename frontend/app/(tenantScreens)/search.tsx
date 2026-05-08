@@ -10,6 +10,7 @@ import React, { useRef, useEffect, useState, useMemo, useCallback, memo } from '
 import mockData from '@/assets/data/mock_data.json'
 import { CardStyles } from '@/components/globalStyles/cardStyles'
 import { PageStyles } from '@/components/globalStyles/pageStyles'
+import { BedDouble, MapPin, Star } from 'lucide-react-native'
 
 interface Listing {
   id: string
@@ -60,7 +61,6 @@ const ListingCard = memo(({ item, colorScheme, colorThemeRenderer }: ListingCard
           CardStyles.listCard,
           {
             borderColor: colorThemeRenderer.borderColor,
-            backgroundColor: colorScheme === 'light' ? '#fff' : Colors.dark.background,
           },
         ]}
       >
@@ -72,83 +72,71 @@ const ListingCard = memo(({ item, colorScheme, colorThemeRenderer }: ListingCard
         />
 
         {/* Right side: Content */}
-        <View style={CardStyles.listCardText}>
-          {/* Price and Type */}
-          <View style={CardStyles.flexCardRow}>
-            <ThemedText
-              style={{
-                fontSize: 16,
-                fontWeight: '700',
-                color: colorThemeRenderer.oppositeTextColor,
-              }}
-            >
-              {item.currency} {item.price.toLocaleString()}
-              <ThemedText style={{ fontSize: 12, fontWeight: '400' }}>
-                /{item.time.slice(0, 2)}
-              </ThemedText>
-            </ThemedText>
-            <ThemedText
-              style={{
-                fontSize: 12,
-                fontWeight: '500',
-                color: colorThemeRenderer.secondaryFontColor,
-              }}
-            >
-              {item.type}
-            </ThemedText>
-          </View>
-
-          {/* Location */}
-          <ThemedText
+        <ThemedView style={CardStyles.listCardColumn}>
+          {/* Price*/}
+          <ThemedText type='price'
             style={{
-              fontSize: 12,
-              fontWeight: '400',
-              color: colorThemeRenderer.secondaryFontColor,
+              color: colorThemeRenderer.oppositeTextColor,
             }}
-            numberOfLines={1}
           >
-            {item.location}
+            {item.currency} {item.price.toLocaleString()}
+            <ThemedText style={{ fontSize: 14, fontWeight: '400' }}>
+              /{item.time}
+            </ThemedText>
           </ThemedText>
 
-          {/* Bedrooms and Rating */}
-          <View style={CardStyles.flexCardRow}>
+          {/* Type*/}
+          <ThemedText type='defaultSemiBold'
+            style={{
+              color: colorThemeRenderer.secondaryFontColor,
+            }}
+          >
+            {item.type}
+          </ThemedText>
+            
+
+          {/* Location */}
+          <ThemedView style={CardStyles.cardDetailsRowWithIcon}>
+            <MapPin size={16} color={'green'}/>
             <ThemedText
-              style={{
-                fontSize: 12,
-                fontWeight: '400',
-                color: colorThemeRenderer.secondaryFontColor,
-              }}
+              style={CardStyles.cardLocation}
+              numberOfLines={1}
             >
-              {item.bedrooms} Bedroom{item.bedrooms !== 1 ? 's' : ''}
+              {item.location}
             </ThemedText>
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 4,
-              }}
+          </ThemedView>
+
+          {/* Bedrooms and Rating */}
+          <ThemedView style={CardStyles.bedRoomAndRating}>
+
+            {/*Bedroom */}
+            <ThemedView style={CardStyles.cardDetailsRowWithIcon}>
+              <BedDouble size={16} color={Colors[(colorScheme as 'light' | 'dark') ?? 'light'].tint}/>
+              <ThemedText
+                style={[CardStyles.cardLocation, {color: colorThemeRenderer.secondaryFontColor}]}
+              >
+                {item.bedrooms} Bedroom{item.bedrooms !== 1 ? 's' : ''}
+              </ThemedText>
+
+            </ThemedView>
+
+            {/*Rating */}
+            <ThemedView
+              style={CardStyles.cardDetailsRowWithIcon}
             >
+              <Star color={'#EAB308'} size={14} strokeWidth={2.5}/>
               <ThemedText
                 style={{
-                  fontSize: 12,
-                  fontWeight: '700',
+                  fontSize: 14,
+                  fontWeight: '500',
                   color: colorThemeRenderer.oppositeTextColor,
                 }}
               >
                 {item.rating.toFixed(1)}
               </ThemedText>
-              <ThemedText
-                style={{
-                  fontSize: 12,
-                  fontWeight: '400',
-                  color: colorThemeRenderer.secondaryFontColor,
-                }}
-              >
-                (251)
-              </ThemedText>
-            </View>
-          </View>
-        </View>
+            </ThemedView>
+          </ThemedView>
+        </ThemedView>
       </ThemedView>
     </TouchableOpacity>
   )
