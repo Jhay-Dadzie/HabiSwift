@@ -29,6 +29,11 @@ export const CardStyles = StyleSheet.create({
         shadowRadius: 24,
         elevation: 5
     },
+    listCardColumn: {
+        flex: 1,
+        flexDirection: 'column',
+        gap: 7
+    },
     listCardText: {
         flex: 1,
         flexDirection: 'column',
@@ -90,4 +95,16 @@ export const CardStyles = StyleSheet.create({
         padding: 10,
         gap: 3,
     },
+    cardDetailsRowWithIcon: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5
+    },
+    bedRoomAndRating: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        
+    }
 })
