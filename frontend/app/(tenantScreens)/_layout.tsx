@@ -35,7 +35,14 @@ export default function Layout() {
                 }}/>
                 <Tabs.Screen name="messages" options={{
                     title: "Messages",
-                    tabBarIcon: ({color}) => <MessageSquare size={24} color={color}/>
+                    tabBarIcon: ({color}) => <MessageSquare size={24} color={color}/>,
+
+                    tabBarBadge: 12,
+                    tabBarBadgeStyle: {
+                        paddingHorizontal: 6,
+                        fontSize: 12,
+                        height: 15,
+                    }
                 }}/>
                 <Tabs.Screen name="profile" options={{
                     title: "Profile",
