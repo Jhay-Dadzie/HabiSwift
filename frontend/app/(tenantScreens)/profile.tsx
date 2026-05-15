@@ -133,6 +133,7 @@ export default function Profile() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        style={{paddingHorizontal: 5}}
       >
         {/* Profile Header */}
         <View style={styles.profileHeader}>
@@ -205,8 +206,8 @@ export default function Profile() {
                 Switch to Landlord
               </ThemedText>
               <ThemedText
+                
                 style={[
-                  styles.landlordSubtitle,
                   { color: 'rgba(255, 255, 255, 0.8)' },
                 ]}
               >
@@ -228,9 +229,9 @@ export default function Profile() {
         {/* Account Section */}
         <View style={styles.section}>
           <ThemedText
+            type='defaultSemiBold'
             style={[
               styles.sectionHeader,
-              { color: theme.secondaryFontColor },
             ]}
           >
             ACCOUNT
@@ -245,9 +246,9 @@ export default function Profile() {
         {/* Preferences Section */}
         <View style={styles.section}>
           <ThemedText
+            type='defaultSemiBold'
             style={[
               styles.sectionHeader,
-              { color: theme.secondaryFontColor },
             ]}
           >
             PREFERENCES
@@ -262,9 +263,9 @@ export default function Profile() {
         {/* Support & Info Section */}
         <View style={[styles.section, styles.lastSection]}>
           <ThemedText
+            type='defaultSemiBold'
             style={[
               styles.sectionHeader,
-              { color: theme.secondaryFontColor },
             ]}
           >
             SUPPORT & INFO
@@ -344,13 +345,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   landlordTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
-    marginBottom: 4,
-  },
-  landlordSubtitle: {
-    fontSize: 12,
-    fontWeight: '500',
   },
 
   // Section Styles
@@ -361,10 +357,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   sectionHeader: {
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   menuContainer: {
     borderRadius: 16,
