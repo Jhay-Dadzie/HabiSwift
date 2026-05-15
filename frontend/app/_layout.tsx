@@ -7,21 +7,30 @@ import { toastConfig } from '@/components/toastConfig';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ThemeProvider as CustomThemeProvider } from '@/contexts/ThemeContext';
 
-export default function RootLayout() {
+function RootLayoutContent() {
   const colorScheme = useColorScheme()
   return (
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack screenOptions={{headerShown: false}}>
+        <Stack.Screen name='(onboarding)'/>
+        <Stack.Screen name='(tenantScreens)'/>
+        <Stack.Screen name='(landlordScreens)'/>
+        <Stack.Screen name='auth'/>
+      </Stack>
+      <StatusBar style='auto'/>
+      <Toast config={toastConfig}/>
+    </ThemeProvider>
+  )
+}
+
+export default function RootLayout() {
+  return (
     <SafeAreaProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{headerShown: false}}>
-          <Stack.Screen name='(onboarding)'/>
-          <Stack.Screen name='(tenantScreens)'/>
-          <Stack.Screen name='(landlordScreens)'/>
-          <Stack.Screen name='auth'/>
-        </Stack>
-        <StatusBar style='auto'/>
-        <Toast config={toastConfig}/>
-      </ThemeProvider>
+      <CustomThemeProvider>
+        <RootLayoutContent />
+      </CustomThemeProvider>
     </SafeAreaProvider>
   )
 }
