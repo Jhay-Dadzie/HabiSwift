@@ -11,44 +11,42 @@ export default function Layout() {
     const navStyle = useTabStyle();
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme ?? 'light'].background }}>
 
-            <Tabs screenOptions={{
-                tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-                headerStyle: navStyle.headerStyle,
-                tabBarStyle: navStyle.tabBarStyle,
-                
-            }}>
-                <Tabs.Screen name="index" options={{
-                    title: "Home",
-                    headerShown: false,
-                    tabBarIcon: ({color}) => <House size={24} color={color}/>
-                }}/>
-                <Tabs.Screen name="search" options={{
-                    title: "Search",
-                    headerShown: false,
-                    tabBarIcon: ({color}) => <Ionicons name="search" size={24} color={color}/>
-                }}/>
-                <Tabs.Screen name="wishlist" options={{
-                    title: "Wishlist",
-                    tabBarIcon: ({color}) => <Heart size={24} color={color}/>
-                }}/>
-                <Tabs.Screen name="messages" options={{
-                    title: "Messages",
-                    tabBarIcon: ({color}) => <MessageSquare size={24} color={color}/>,
+        <Tabs screenOptions={{
+            tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+            headerStyle: navStyle.headerStyle,
+            tabBarStyle: navStyle.tabBarStyle,
+            
+        }}>
+            <Tabs.Screen name="index" options={{
+                title: "Home",
+                headerShown: false,
+                tabBarIcon: ({color}) => <House size={24} color={color}/>
+            }}/>
+            <Tabs.Screen name="search" options={{
+                title: "Search",
+                headerShown: false,
+                tabBarIcon: ({color}) => <Ionicons name="search" size={24} color={color}/>
+            }}/>
+            <Tabs.Screen name="wishlist" options={{
+                title: "Wishlist",
+                tabBarIcon: ({color}) => <Heart size={24} color={color}/>
+            }}/>
+            <Tabs.Screen name="messages" options={{
+                title: "Messages",
+                tabBarIcon: ({color}) => <MessageSquare size={24} color={color}/>,
 
-                    tabBarBadge: 12,
-                    tabBarBadgeStyle: {
-                        paddingHorizontal: 6,
-                        fontSize: 12,
-                        height: 15,
-                    }
-                }}/>
-                <Tabs.Screen name="profile" options={{
-                    title: "Profile",
-                    tabBarIcon: ({color}) => <CircleUserRound size={24} color={color}/>
-                }}/>
-            </Tabs>
-        </SafeAreaView>
+                tabBarBadge: 12,
+                tabBarBadgeStyle: {
+                    paddingHorizontal: 6,
+                    fontSize: 12,
+                    height: 15,
+                }
+            }}/>
+            <Tabs.Screen name="profile" options={{
+                title: "Profile",
+                tabBarIcon: ({color}) => <CircleUserRound size={24} color={color}/>
+            }}/>
+        </Tabs>
     )
 }

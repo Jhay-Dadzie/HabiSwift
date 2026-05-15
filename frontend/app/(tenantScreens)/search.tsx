@@ -11,6 +11,7 @@ import mockData from '@/assets/data/mock_data.json'
 import { CardStyles } from '@/components/globalStyles/cardStyles'
 import { PageStyles } from '@/components/globalStyles/pageStyles'
 import { BedDouble, MapPin, Star } from 'lucide-react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 interface Listing {
   id: string
@@ -190,6 +191,7 @@ export default function Search() {
   const searchInputRef = useRef<TextInput>(null)
   const [searchValue, setSearchValue] = useState('')
   const colorScheme = useColorScheme()
+  const colors = Colors[colorScheme ?? 'light']
   const colorThemeRenderer = usePageThemeRender()
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState('All')
@@ -255,7 +257,7 @@ export default function Search() {
   const keyExtractor = useCallback((item: Listing) => item.id, [])
 
   return (
-    <ThemedView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, paddingTop: 20 }}>
       <SearchBar
         ref={searchInputRef}
         value={searchValue}
@@ -264,10 +266,7 @@ export default function Search() {
       />
 
       <ScrollView
-        style={[
-          PageStyles.container,
-          { backgroundColor: Colors[colorScheme ?? 'light'].background },
-        ]}
+        style={[PageStyles.container]}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 20 }}
         scrollEventThrottle={16}  // Optimize scroll performance
@@ -354,7 +353,7 @@ export default function Search() {
           </ThemedView>
         )}
       </ScrollView>
-    </ThemedView>
+    </SafeAreaView>
   )
 }
 

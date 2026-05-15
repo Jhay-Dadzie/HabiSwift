@@ -20,6 +20,7 @@ import { BedDouble, Bell, Heart, MapPin, Star } from 'lucide-react-native'
 import { Ionicons } from "@expo/vector-icons"
 import SearchBar from '@/components/searchBar'
 import { CardStyles } from '@/components/globalStyles/cardStyles'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 const { width } = Dimensions.get('window')
 
@@ -212,120 +213,122 @@ export default function Index() {
   const bgColor = Colors[colorScheme ?? 'light'].background
 
   return (
-    <ScrollView
-      style={[PageStyles.container, { backgroundColor: bgColor }]}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.contentContainer}
-      stickyHeaderIndices={[1]}
-    >
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <ThemedView style={styles.header}>
-        <View style={styles.headerLeft}>
-          {/* Avatar placeholder */}
-          <View style={styles.avatar}>
-            <ThemedText style={styles.avatarText}>J</ThemedText>
-          </View>
-          <View>
-            <ThemedText style={styles.greeting}>Good evening</ThemedText>
-            <ThemedText style={[styles.userName, {color: colorThemeRenderer.oppositeTextColor}]}>Joseph</ThemedText>
-          </View>
-        </View>
-        <TouchableOpacity style={[styles.notifBtn, {
-            backgroundColor: colorThemeRenderer.iconContainer,
-            borderColor: colorThemeRenderer.borderColor
-          }]}
-        >
-          <Bell size={20} color={colorThemeRenderer.oppositeTextColor}/>
-        </TouchableOpacity>
-      </ThemedView>
+    <SafeAreaView style={[PageStyles.container, { backgroundColor: bgColor }]}>
 
-      {/* ── Search bar ─────────────────────────────────────────────────────── */}
-      <SearchBar autoFocus={false} onPress={() => router.push('/(tenantScreens)/search')}/>
-
-      {/* ── Filter chips ───────────────────────────────────────────────────── */}
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={PageStyles.filterRow}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.contentContainer}
+        stickyHeaderIndices={[1]}
       >
-        {FILTERS.map((f) => (
-          <TouchableOpacity
-            key={f}
-            style={[PageStyles.filters,
-              activeFilter === f ? {backgroundColor: Colors[colorScheme ?? 'light'].tint} 
-              : {backgroundColor: colorThemeRenderer.secondaryBackground},
-              {
-                borderColor: colorThemeRenderer.borderColor,
-              }]}
-            onPress={() => setActiveFilter(f)}
+        {/* ── Header ─────────────────────────────────────────────────────────── */}
+        <ThemedView style={styles.header}>
+          <View style={styles.headerLeft}>
+            {/* Avatar placeholder */}
+            <View style={styles.avatar}>
+              <ThemedText style={styles.avatarText}>J</ThemedText>
+            </View>
+            <View>
+              <ThemedText style={styles.greeting}>Good evening</ThemedText>
+              <ThemedText style={[styles.userName, {color: colorThemeRenderer.oppositeTextColor}]}>Joseph</ThemedText>
+            </View>
+          </View>
+          <TouchableOpacity style={[styles.notifBtn, {
+              backgroundColor: colorThemeRenderer.iconContainer,
+              borderColor: colorThemeRenderer.borderColor
+            }]}
           >
-            <ThemedText
-              style={[PageStyles.filtersText,
-                activeFilter === f ? {color: '#fff'}
-                : {color: colorThemeRenderer.secondaryFontColor},
-              ]}
+            <Bell size={20} color={colorThemeRenderer.oppositeTextColor}/>
+          </TouchableOpacity>
+        </ThemedView>
+
+        {/* ── Search bar ─────────────────────────────────────────────────────── */}
+        <SearchBar autoFocus={false} onPress={() => router.push('/(tenantScreens)/search')}/>
+
+        {/* ── Filter chips ───────────────────────────────────────────────────── */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={PageStyles.filterRow}
+        >
+          {FILTERS.map((f) => (
+            <TouchableOpacity
+              key={f}
+              style={[PageStyles.filters,
+                activeFilter === f ? {backgroundColor: Colors[colorScheme ?? 'light'].tint} 
+                : {backgroundColor: colorThemeRenderer.secondaryBackground},
+                {
+                  borderColor: colorThemeRenderer.borderColor,
+                }]}
+              onPress={() => setActiveFilter(f)}
             >
-              {f}
+              <ThemedText
+                style={[PageStyles.filtersText,
+                  activeFilter === f ? {color: '#fff'}
+                  : {color: colorThemeRenderer.secondaryFontColor},
+                ]}
+              >
+                {f}
+              </ThemedText>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* ── Recommended for you ────────────────────────────────────────────── */}
+        <ThemedView style={styles.sectionHeader}>
+          <ThemedText type='title' style={{color: colorThemeRenderer.oppositeTextColor}}>Recommended for you</ThemedText>
+          <TouchableOpacity>
+            <ThemedText type='link' style={{color: colorThemeRenderer.link}}>
+              See all
             </ThemedText>
           </TouchableOpacity>
-        ))}
+        </ThemedView>
+
+        <FlatList
+          data={filteredRecommended}
+          keyExtractor={(item) => `rec-${item.id}`}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalList}
+          renderItem={({ item }) => <LargeCard item={item} />}
+          ListEmptyComponent={
+            <View style={{ flex: 1, width: width - 40, justifyContent: 'center', alignItems: 'center' }}>
+              <ThemedView style={PageStyles.emptyStateContainer}>
+                <Image style={PageStyles.emptyStateImage} source={require('@/assets/images/emptyState.png')} />
+                <ThemedText style={[PageStyles.emptyText]}>No listings found.</ThemedText>
+              </ThemedView>
+            </View>
+          }
+        />
+
+        {/* ── Houses Near Your Location ──────────────────────────────────────── */}
+        <ThemedView style={styles.sectionHeader}>
+          <ThemedText type='title' style={{color: colorThemeRenderer.oppositeTextColor}}>Houses Near Your Location</ThemedText>
+          <TouchableOpacity>
+            <ThemedText type='link' style={{color: colorThemeRenderer.link}}>See all</ThemedText>
+          </TouchableOpacity>
+        </ThemedView>
+
+        <FlatList
+          data={filteredNearYou}
+          keyExtractor={(item) => `near-${item.id}`}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalList}
+          renderItem={({ item }) => <SmallCard item={item} />}
+          ListEmptyComponent={
+            <View style={{ flex: 1, width: width - 40, justifyContent: 'center', alignItems: 'center' }}>
+              <ThemedView style={PageStyles.emptyStateContainer}>
+                <Image style={PageStyles.emptyStateImage} source={require('@/assets/images/emptyState.png')} />
+                <ThemedText style={[PageStyles.emptyText]}>No listings found.</ThemedText>
+              </ThemedView>
+            </View>
+          }
+        />
+
+        {/* Bottom spacer */}
+        <View style={{ height: 32 }} />
       </ScrollView>
-
-      {/* ── Recommended for you ────────────────────────────────────────────── */}
-      <ThemedView style={styles.sectionHeader}>
-        <ThemedText type='title' style={{color: colorThemeRenderer.oppositeTextColor}}>Recommended for you</ThemedText>
-        <TouchableOpacity>
-          <ThemedText type='link' style={{color: colorThemeRenderer.link}}>
-            See all
-          </ThemedText>
-        </TouchableOpacity>
-      </ThemedView>
-
-      <FlatList
-        data={filteredRecommended}
-        keyExtractor={(item) => `rec-${item.id}`}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.horizontalList}
-        renderItem={({ item }) => <LargeCard item={item} />}
-        ListEmptyComponent={
-          <View style={{ flex: 1, width: width - 40, justifyContent: 'center', alignItems: 'center' }}>
-            <ThemedView style={PageStyles.emptyStateContainer}>
-              <Image style={PageStyles.emptyStateImage} source={require('@/assets/images/emptyState.png')} />
-              <ThemedText style={[PageStyles.emptyText]}>No listings found.</ThemedText>
-            </ThemedView>
-          </View>
-        }
-      />
-
-      {/* ── Houses Near Your Location ──────────────────────────────────────── */}
-      <ThemedView style={styles.sectionHeader}>
-        <ThemedText type='title' style={{color: colorThemeRenderer.oppositeTextColor}}>Houses Near Your Location</ThemedText>
-        <TouchableOpacity>
-          <ThemedText type='link' style={{color: colorThemeRenderer.link}}>See all</ThemedText>
-        </TouchableOpacity>
-      </ThemedView>
-
-      <FlatList
-        data={filteredNearYou}
-        keyExtractor={(item) => `near-${item.id}`}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.horizontalList}
-        renderItem={({ item }) => <SmallCard item={item} />}
-        ListEmptyComponent={
-          <View style={{ flex: 1, width: width - 40, justifyContent: 'center', alignItems: 'center' }}>
-            <ThemedView style={PageStyles.emptyStateContainer}>
-              <Image style={PageStyles.emptyStateImage} source={require('@/assets/images/emptyState.png')} />
-              <ThemedText style={[PageStyles.emptyText]}>No listings found.</ThemedText>
-            </ThemedView>
-          </View>
-        }
-      />
-
-      {/* Bottom spacer */}
-      <View style={{ height: 32 }} />
-    </ScrollView>
+    </SafeAreaView>
   )
 }
 
