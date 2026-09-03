@@ -1,360 +1,329 @@
-import { FlatList, Image, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native'
-import { ThemedText } from '@/components/themed-text'
-import { ThemedView } from '@/components/themed-view'
-import { Colors } from '@/constants/theme'
-import usePageThemeRender from '@/components/globalStyles/pageThemeRender'
-import { useColorScheme } from '@/hooks/use-color-scheme'
-import { useRouter } from 'expo-router'
-import SearchBar from '@/components/searchBar'
-import React, { useRef, useEffect, useState, useMemo, useCallback, memo } from 'react'
-import mockData from '@/assets/data/mock_data.json'
-import { CardStyles } from '@/components/globalStyles/cardStyles'
-import { PageStyles } from '@/components/globalStyles/pageStyles'
-import { BedDouble, MapPin, Star } from 'lucide-react-native'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  FlatList,
+  InteractionManager,
+  Keyboard,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useLocalSearchParams } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 
-interface Listing {
-  id: string
-  type: string
-  price: number
-  currency: string
-  time: string
-  bedrooms: number
-  bathrooms: number
-  location: string
-  amenities: string[]
-  image: string[]
-  rating: number
-}
+import { ThemedText } from '@/components/themed-text'
+import SearchBar from '@/components/searchBar'
+import { Chip } from '@/components/chip'
+import FilterSheet from '@/components/filterSheet'
+import EmptyState from '@/components/emptyState'
+import { ListingCard, ROW_ITEM_HEIGHT } from '@/components/listing/listingCard'
+import usePageThemeRender from '@/components/globalStyles/pageThemeRender'
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
+import { useFilters } from '@/contexts/FiltersContext'
+import { HOUSE_TYPES, HouseType, Listing } from '@/types/listing'
+import { ALL_LISTINGS, applyFilters, countActiveFilters } from '@/utils/listings'
+import { tapFeedback } from '@/utils/haptics'
 
-// ─── Filter chips ─────────────────────────────────────────────────────────────
-const FILTERS = ['All', 'Price', 'Location', 'Apartment', 'Chamber and Hall', 'Single Room', 'Self-Contained']
+const QUICK_FILTERS = ['All', ...HOUSE_TYPES] as const
 
-// ─── Derive sections from mock data ──────────────────────────────────────────
-const allListings: Listing[] = mockData as Listing[]
-
-/** Recommended: highest-rated listings (top 10) */
-const recommended = [...allListings]
-  .sort((a, b) => b.rating - a.rating)
-  .slice(0, 10)
-
-/** Near you: variety of types (top 10 by rating after recommended) */
-const nearYou = [...allListings]
-  .sort((a, b) => b.rating - a.rating)
-  .slice(10, 20)
-
-// ─── Optimized Listing Card Component - Memoized ──────────────────────────────
-interface ListingCardProps {
-  item: Listing
-  colorScheme: string
-  colorThemeRenderer: any
-}
-
-const ListingCard = memo(({ item, colorScheme, colorThemeRenderer }: ListingCardProps) => {
-  return (
-    <TouchableOpacity 
-      activeOpacity={0.9} 
-      onPress={() => null}
-      style={{ marginBottom: 16 }}
-    >
-      <ThemedView
-        style={[
-          CardStyles.listCard,
-          {
-            borderColor: colorThemeRenderer.borderColor,
-          },
-        ]}
-      >
-        {/* Left side: Image */}
-        <Image
-          source={{ uri: item.image[0] }}
-          style={CardStyles.listImage}
-          resizeMode="cover"
-        />
-
-        {/* Right side: Content */}
-        <ThemedView style={CardStyles.listCardColumn}>
-          {/* Price*/}
-          <ThemedText type='price'
-            style={{
-              color: colorThemeRenderer.oppositeTextColor,
-            }}
-          >
-            {item.currency} {item.price.toLocaleString()}
-            <ThemedText style={{ fontSize: 14, fontWeight: '400' }}>
-              /{item.time}
-            </ThemedText>
-          </ThemedText>
-
-          {/* Type*/}
-          <ThemedText type='defaultSemiBold'
-            style={{
-              color: colorThemeRenderer.secondaryFontColor,
-            }}
-          >
-            {item.type}
-          </ThemedText>
-            
-
-          {/* Location */}
-          <ThemedView style={CardStyles.cardDetailsRowWithIcon}>
-            <MapPin size={16} color={'green'}/>
-            <ThemedText
-              style={CardStyles.cardLocation}
-              numberOfLines={1}
-            >
-              {item.location}
-            </ThemedText>
-          </ThemedView>
-
-          {/* Bedrooms and Rating */}
-          <ThemedView style={CardStyles.bedRoomAndRating}>
-
-            {/*Bedroom */}
-            <ThemedView style={CardStyles.cardDetailsRowWithIcon}>
-              <BedDouble size={16} color={Colors[(colorScheme as 'light' | 'dark') ?? 'light'].tint}/>
-              <ThemedText
-                style={[CardStyles.cardLocation, {color: colorThemeRenderer.secondaryFontColor}]}
-              >
-                {item.bedrooms} Bedroom{item.bedrooms !== 1 ? 's' : ''}
-              </ThemedText>
-
-            </ThemedView>
-
-            {/*Rating */}
-            <ThemedView
-              style={CardStyles.cardDetailsRowWithIcon}
-            >
-              <Star color={'#EAB308'} size={14} strokeWidth={2.5}/>
-              <ThemedText
-                style={{
-                  fontSize: 14,
-                  fontWeight: '500',
-                  color: colorThemeRenderer.oppositeTextColor,
-                }}
-              >
-                {item.rating.toFixed(1)}
-              </ThemedText>
-            </ThemedView>
-          </ThemedView>
-        </ThemedView>
-      </ThemedView>
-    </TouchableOpacity>
-  )
-})
-
-ListingCard.displayName = 'ListingCard'
-
-// ─── Optimized Filter Chip Component - Memoized ──────────────────────────────
-interface FilterChipProps {
-  label: string
-  isActive: boolean
-  onPress: () => void
-  colorScheme?: keyof typeof Colors
-  colorThemeRenderer: any
-}
-
-const FilterChip = memo(({ label, isActive, onPress, colorScheme, colorThemeRenderer }: FilterChipProps) => {
-  return (
-    <TouchableOpacity
-      key={label}
-      style={[
-        PageStyles.filters,
-        isActive
-          ? { backgroundColor: Colors[colorScheme ?? 'light'].tint }
-          : { backgroundColor: colorThemeRenderer.secondaryBackground },
-        {
-          borderColor: colorThemeRenderer.borderColor,
-        },
-      ]}
-      onPress={onPress}
-      activeOpacity={0.6}
-    >
-      <ThemedText
-        style={[
-          PageStyles.filtersText,
-          isActive
-            ? { color: '#fff' }
-            : { color: colorThemeRenderer.secondaryFontColor },
-        ]}
-      >
-        {label}
-      </ThemedText>
-    </TouchableOpacity>
-  )
-})
-
-FilterChip.displayName = 'FilterChip'
-
-// ─── Main Search Component ────────────────────────────────────────────────────
 export default function Search() {
-  const searchInputRef = useRef<TextInput>(null)
-  const [searchValue, setSearchValue] = useState('')
-  const colorScheme = useColorScheme()
-  const colors = Colors[colorScheme ?? 'light']
-  const colorThemeRenderer = usePageThemeRender()
-  const router = useRouter()
-  const [activeFilter, setActiveFilter] = useState('All')
+  const theme = usePageThemeRender()
+  const { focus } = useLocalSearchParams<{ focus?: string }>()
+  const {
+    filters,
+    setFilters,
+    resetFilters,
+    recentSearches,
+    addRecentSearch,
+    removeRecentSearch,
+    clearRecentSearches,
+  } = useFilters()
+
+  const inputRef = useRef<TextInput>(null)
+  const listRef = useRef<FlatList<Listing>>(null)
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false)
+
+  // The TextInput is driven by local state so typing never waits on the
+  // 450-item filter pass; the debounced value is what actually filters.
+  const [input, setInput] = useState(filters.query)
+  const debouncedQuery = useDebouncedValue(input, 250)
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      searchInputRef.current?.focus()
-    }, 100)
+    if (debouncedQuery !== filters.query) setFilters({ query: debouncedQuery })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedQuery])
 
-    return () => clearTimeout(timer)
-  }, [])
+  // Only raise the keyboard when the user arrived via the home search bar, and
+  // only once the navigation animation has settled — focusing mid-transition
+  // makes the push stutter.
+  useEffect(() => {
+    if (focus !== '1') return
+    const task = InteractionManager.runAfterInteractions(() => {
+      inputRef.current?.focus()
+    })
+    return () => task.cancel()
+  }, [focus])
 
-  // ─── Filter listings based on active filter and search value ────────────────
-  // Memoized to prevent recalculation on every render
-  const filteredListings = useMemo(() => {
-    let filtered = [...allListings]
-
-    // Filter by type if not 'All', 'Price', or 'Location'
-    if (activeFilter !== 'All' && activeFilter !== 'Price' && activeFilter !== 'Location') {
-      filtered = filtered.filter(item => item.type === activeFilter)
-    }
-
-    // Filter by search value (location or type)
-    if (searchValue) {
-      const lowerSearch = searchValue.toLowerCase()
-      filtered = filtered.filter(
-        item =>
-          item.location.toLowerCase().includes(lowerSearch) ||
-          item.type.toLowerCase().includes(lowerSearch)
-      )
-    }
-
-    return filtered
-  }, [activeFilter, searchValue])
-
-  // ─── Memoized render function for FlatList ────────────────────────────────────
-  const renderListingCard = useCallback(
-    ({ item }: { item: Listing }) => (
-      <ListingCard 
-        item={item} 
-        colorScheme={colorScheme ?? 'light'} 
-        colorThemeRenderer={colorThemeRenderer}
-      />
-    ),
-    [colorScheme, colorThemeRenderer]
+  const results = useMemo(
+    () => applyFilters(ALL_LISTINGS, { ...filters, query: debouncedQuery }),
+    [filters, debouncedQuery]
   )
 
-  // ─── Memoized render function for filter chips ────────────────────────────────
-  const renderFilterChips = useCallback(() => {
-    return FILTERS.map((f) => (
-      <FilterChip
-        key={f}
-        label={f}
-        isActive={activeFilter === f}
-        onPress={() => setActiveFilter(f)}
-        colorScheme={colorScheme ?? 'light'}
-        colorThemeRenderer={colorThemeRenderer}
-      />
-    ))
-  }, [activeFilter, colorScheme, colorThemeRenderer])
+  // Jump back to the top whenever the result set changes underneath the user.
+  useEffect(() => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: false })
+  }, [results])
 
-  // ─── Memoized key extractor for FlatList ──────────────────────────────────────
+  const activeFilterCount = countActiveFilters(filters)
+  const activeType = filters.types.length === 1 ? filters.types[0] : 'All'
+
+  const onQuickFilter = useCallback(
+    (label: string) =>
+      setFilters({ types: label === 'All' ? [] : [label as HouseType] }),
+    [setFilters]
+  )
+
+  const onSubmit = useCallback(
+    (value: string) => {
+      addRecentSearch(value)
+      Keyboard.dismiss()
+    },
+    [addRecentSearch]
+  )
+
+  const applyRecentSearch = useCallback((term: string) => {
+    tapFeedback()
+    setInput(term)
+    Keyboard.dismiss()
+  }, [])
+
+  const renderItem = useCallback(
+    ({ item }: { item: Listing }) => <ListingCard listing={item} variant="row" />,
+    []
+  )
+
   const keyExtractor = useCallback((item: Listing) => item.id, [])
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, paddingTop: 20 }}>
-      <SearchBar
-        ref={searchInputRef}
-        value={searchValue}
-        onChangeText={setSearchValue}
-        autoFocus={true}
-      />
+  // Rows are a fixed height, so the list can lay out without measuring.
+  const getItemLayout = useCallback(
+    (_: ArrayLike<Listing> | null | undefined, index: number) => ({
+      length: ROW_ITEM_HEIGHT,
+      offset: ROW_ITEM_HEIGHT * index,
+      index,
+    }),
+    []
+  )
+
+  const showRecent = input.trim().length === 0 && recentSearches.length > 0
+
+  /**
+   * Passed as an element rather than a component so React keeps the same
+   * instance across renders — a `() => <View/>` here would remount the header
+   * on every keystroke.
+   */
+  const header = (
+    <View style={styles.header}>
+      {showRecent && (
+        <View style={styles.recentBlock}>
+          <View style={styles.recentHeader}>
+            <ThemedText style={[styles.sectionLabel, { color: theme.oppositeTextColor }]}>
+              Recent searches
+            </ThemedText>
+            <Pressable onPress={clearRecentSearches} hitSlop={8}>
+              <ThemedText style={[styles.clearText, { color: theme.link }]}>
+                Clear
+              </ThemedText>
+            </Pressable>
+          </View>
+          <View style={styles.recentWrap}>
+            {recentSearches.map((term) => (
+              <View
+                key={term}
+                style={[
+                  styles.recentPill,
+                  {
+                    backgroundColor: theme.secondaryBackground,
+                    borderColor: theme.borderColor,
+                  },
+                ]}
+              >
+                <Pressable onPress={() => applyRecentSearch(term)} hitSlop={6}>
+                  <ThemedText
+                    style={[styles.recentText, { color: theme.secondaryFontColor }]}
+                  >
+                    {term}
+                  </ThemedText>
+                </Pressable>
+                <Pressable
+                  onPress={() => removeRecentSearch(term)}
+                  hitSlop={8}
+                  accessibilityLabel={`Remove ${term} from recent searches`}
+                >
+                  <Ionicons name="close" size={14} color={theme.icon} />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
 
       <ScrollView
-        style={[PageStyles.container]}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 20 }}
-        scrollEventThrottle={16}  // Optimize scroll performance
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipRow}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Results Count and Filter Section */}
-        <ThemedView style={{ paddingHorizontal: 10, paddingVertical: 16 }}>
-          <ThemedText
-            style={{
-              fontSize: 18,
-              fontWeight: '600',
-              marginBottom: 12,
-              color: colorThemeRenderer.oppositeTextColor,
-            }}
-          >
-            {filteredListings.length} matches found
-          </ThemedText>
-
-          {/* Filter Chips */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={PageStyles.filterRow}
-            scrollEventThrottle={16}  // Optimize scroll performance
-          >
-            {renderFilterChips()}
-          </ScrollView>
-        </ThemedView>
-
-        {/* Listings List - Optimized for Large Lists */}
-        {filteredListings.length > 0 ? (
-          <FlatList
-            data={filteredListings}
-            keyExtractor={keyExtractor}
-            renderItem={renderListingCard}
-            scrollEnabled={false}
-            contentContainerStyle={{
-              paddingHorizontal: 10,
-              paddingTop: 8,
-            }}
-            // ─── PERFORMANCE OPTIMIZATIONS FOR 450+ ITEMS ───────────────────
-            // Only render items visible on screen + buffer
-            initialNumToRender={10}           // Render first 10 items
-            maxToRenderPerBatch={10}          // Render max 10 items per batch
-            updateCellsBatchingPeriod={50}    // Update cells every 50ms
-            windowSize={10}                   // Keep 10 items in memory above/below viewport
-            removeClippedSubviews={true}      // Remove items outside viewport
-            // ─────────────────────────────────────────────────────────────
-            getItemLayout={(data, index) => ({
-              length: 166,  // 150px height + 16px margin
-              offset: 166 * index,
-              index,
-            })}
-            CellRendererComponent={({ item, index, ...props }) => (
-              <View {...props}>
-                {renderListingCard({ item: item as Listing })}
-              </View>
-            )}
-            // Avoid creating new objects on every render
-            ListEmptyComponent={
-              <ThemedView style={[PageStyles.emptyStateContainer, { marginTop: 40 }]}>
-                <ThemedText
-                  style={{
-                    fontSize: 16,
-                    fontWeight: '500',
-                    color: colorThemeRenderer.secondaryFontColor,
-                  }}
-                >
-                  No listings found
-                </ThemedText>
-              </ThemedView>
-            }
+        {QUICK_FILTERS.map((label) => (
+          <Chip
+            key={label}
+            label={label}
+            active={activeType === label}
+            onPress={onQuickFilter}
           />
-        ) : (
-          <ThemedView style={[PageStyles.emptyStateContainer, { marginTop: 40 }]}>
-            <ThemedText
-              style={{
-                fontSize: 16,
-                fontWeight: '500',
-                color: colorThemeRenderer.secondaryFontColor,
-              }}
-            >
-              No listings found
-            </ThemedText>
-          </ThemedView>
-        )}
+        ))}
       </ScrollView>
+
+      <View style={styles.resultRow}>
+        <ThemedText style={[styles.resultCount, { color: theme.oppositeTextColor }]}>
+          {results.length} home{results.length === 1 ? '' : 's'} found
+        </ThemedText>
+        {activeFilterCount > 0 && (
+          <Pressable onPress={resetFilters} hitSlop={8}>
+            <ThemedText style={[styles.clearText, { color: theme.link }]}>
+              Clear filters
+            </ThemedText>
+          </Pressable>
+        )}
+      </View>
+    </View>
+  )
+
+  return (
+    <SafeAreaView
+      edges={['top']}
+      style={[styles.screen, { backgroundColor: theme.background }]}
+    >
+      {/* Kept outside the list so it never remounts and never loses focus. */}
+      <View style={styles.searchWrapper}>
+        <SearchBar
+          ref={inputRef}
+          value={input}
+          onChangeText={setInput}
+          onSubmit={onSubmit}
+          onFilterPress={() => {
+            Keyboard.dismiss()
+            setFilterSheetOpen(true)
+          }}
+          activeFilterCount={activeFilterCount}
+        />
+      </View>
+
+      <FlatList
+        ref={listRef}
+        data={results}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        getItemLayout={getItemLayout}
+        ListHeaderComponent={header}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        // ── Virtualisation budget for a 450-item catalogue ──────────────
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        updateCellsBatchingPeriod={50}
+        windowSize={11}
+        // `removeClippedSubviews` is deliberately off: `windowSize` already
+        // caps how many rows stay mounted, and clipping is a known source of
+        // blank cells on Android when the list has a rich header like this one.
+        ItemSeparatorComponent={Separator}
+        ListEmptyComponent={
+          <EmptyState
+            title="No homes match your search"
+            subtitle="Try widening your price range or clearing a filter."
+            actionLabel={activeFilterCount ? 'Clear filters' : undefined}
+            onAction={activeFilterCount ? resetFilters : undefined}
+          />
+        }
+      />
+
+      <FilterSheet visible={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} />
     </SafeAreaView>
   )
 }
 
-const styles = StyleSheet.create({})
+/** Hoisted so the list does not get a new separator type on every render. */
+const Separator = () => <View style={{ height: 14 }} />
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  searchWrapper: {
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  header: {
+    gap: 4,
+  },
+  chipRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  resultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  resultCount: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  clearText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  sectionLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  recentBlock: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    gap: 10,
+  },
+  recentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  recentWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  recentPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  recentText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 28,
+    flexGrow: 1,
+  },
+})
