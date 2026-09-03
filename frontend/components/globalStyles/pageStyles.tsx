@@ -1,6 +1,12 @@
-import { Platform, StyleSheet } from 'react-native'
-import React from 'react'
+import { StyleSheet } from 'react-native'
 
+/**
+ * Styles shared across form/auth screens.
+ *
+ * Search, filter-chip and empty-state styles used to live here too; they now
+ * sit next to the components that own them (`searchBar`, `chip`, `emptyState`)
+ * so a screen can no longer drift from the component's own layout.
+ */
 export const PageStyles = StyleSheet.create({
     container: {
         flex: 1,
@@ -102,54 +108,5 @@ export const PageStyles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        
     },
-    searchContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderRadius: 24,
-        borderWidth: 1,
-        paddingHorizontal: 14,
-        marginHorizontal: 10,
-        marginBottom: 15,
-        height: 48,
-        gap: 8,
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: 14,
-    },
-    filterRow: {
-        paddingHorizontal: 10,
-        gap: 10,
-        marginBottom: 12,
-    },
-    filters: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-        borderWidth: 1,
-    },
-    filtersText: {
-        fontSize: 13,
-        fontWeight: '500',
-        lineHeight: 18,
-    },
-
-    emptyStateContainer: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 20
-    },
-    emptyText: {
-        paddingVertical: 20,
-        fontSize: 28,
-        fontWeight: 500,
-
-    },
-    emptyStateImage: {
-        width: 150,
-        height: 150
-    }
 })
