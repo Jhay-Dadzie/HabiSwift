@@ -29,4 +29,15 @@ export const StorageKeys = {
   wishlist: 'habiswift.wishlist.v1',
   theme: 'habiswift.theme.v1',
   recentSearches: 'habiswift.recentSearches.v1',
+  /** Currently signed-in user, or null. */
+  session: 'habiswift.session.v1',
+  /**
+   * Local stand-in for the accounts table until the API exists. Passwords are
+   * stored in the clear here, which is only acceptable because these are
+   * throwaway local accounts on a device with no real credentials behind them —
+   * this key must be deleted, not migrated, when real auth lands.
+   */
+  accounts: 'habiswift.accounts.v1',
+  /** Landlord's own listings, including unpublished drafts. */
+  landlordListings: 'habiswift.landlordListings.v1',
 } as const
