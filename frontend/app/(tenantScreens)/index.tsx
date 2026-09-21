@@ -18,6 +18,7 @@ import { useWishlist } from '@/contexts/WishlistContext'
 import { HOUSE_TYPES, HouseType, Listing, SortKey } from '@/types/listing'
 import { AFFORDABLE, countActiveFilters, NEAR_YOU, RECOMMENDED } from '@/utils/listings'
 import { tapFeedback } from '@/utils/haptics'
+import { useAuth } from '@/contexts/AuthContext'
 
 const QUICK_FILTERS = ['All', ...HOUSE_TYPES] as const
 const RAIL_GAP = 14
@@ -101,6 +102,7 @@ export default function Home() {
   const router = useRouter()
   const { filters, setFilters } = useFilters()
   const { ids: wishlistIds } = useWishlist()
+  const { user } = useAuth()
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
 
   const activeType = filters.types.length === 1 ? filters.types[0] : 'All'
@@ -148,14 +150,14 @@ export default function Home() {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <View style={[styles.avatar, { backgroundColor: Colors[colorScheme].tint }]}>
-              <ThemedText style={styles.avatarText}>J</ThemedText>
+              <ThemedText style={styles.avatarText}>{(user?.fullName ?? 'J').charAt(0).toUpperCase()}</ThemedText>
             </View>
             <View>
               <ThemedText style={[styles.greeting, { color: theme.secondaryFontColor }]}>
                 {greeting()}
               </ThemedText>
               <ThemedText style={[styles.userName, { color: theme.oppositeTextColor }]}>
-                Joseph
+                {user?.fullName?.split(' ')[0] ?? 'there'}
               </ThemedText>
             </View>
           </View>
