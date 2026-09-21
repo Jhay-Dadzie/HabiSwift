@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
+import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router/react-navigation"
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import 'react-native-reanimated'
@@ -11,6 +11,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { ThemeProvider as CustomThemeProvider } from '@/contexts/ThemeContext'
 import { WishlistProvider } from '@/contexts/WishlistContext'
 import { FiltersProvider } from '@/contexts/FiltersContext'
+import { AuthProvider } from '@/contexts/AuthContext'
 import { Colors } from '@/constants/theme'
 
 function RootLayoutContent() {
@@ -48,6 +49,7 @@ function RootLayoutContent() {
         <Stack.Screen name="(tenantScreens)" options={{ animation: 'fade' }} />
         <Stack.Screen name="(landlordScreens)" options={{ animation: 'fade' }} />
         <Stack.Screen name="auth" />
+        <Stack.Screen name="create-listing" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen
           name="listing/[id]"
           options={{
@@ -68,11 +70,13 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <CustomThemeProvider>
-          <WishlistProvider>
-            <FiltersProvider>
-              <RootLayoutContent />
-            </FiltersProvider>
-          </WishlistProvider>
+          <AuthProvider>
+            <WishlistProvider>
+              <FiltersProvider>
+                <RootLayoutContent />
+              </FiltersProvider>
+            </WishlistProvider>
+          </AuthProvider>
         </CustomThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
