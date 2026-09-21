@@ -22,6 +22,7 @@ import * as DocumentPicker from 'expo-document-picker'
 import * as ImagePicker from 'expo-image-picker'
 import Toast from 'react-native-toast-message'
 import { toastConfig } from '@/components/toastConfig'
+import { useAuth } from '@/contexts/AuthContext'
 
 const requirements = [
     "Owner's name must match your profile",
@@ -35,6 +36,7 @@ export default function OwnershipProof() {
     const router = useRouter()
     const colorScheme = useColorScheme()
     const colorThemeRenderer = usePageThemeRender()
+    const { setVerification } = useAuth()
     const dimension = Dimensions.get('window').width
 
     const [progress, setProgress] = useState(0.75)
@@ -143,6 +145,10 @@ export default function OwnershipProof() {
             position: 'bottom',
             visibilityTime: 1800,
         })
+        // The verification screens are a local frontend flow for now. Treat a
+        // completed submission as verified so a landlord can immediately
+        // exercise the listing experience while the API is still pending.
+        setVerification('verified')
         router.replace('/(landlordScreens)')
     }
 
