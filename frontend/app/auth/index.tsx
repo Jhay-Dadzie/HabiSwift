@@ -1,160 +1,190 @@
-import { StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, Text, TouchableOpacity, Image } from 'react-native'
-import { ThemedText } from '@/components/themed-text'
-import { ThemedView } from '@/components/themed-view'
 import React, { useState } from 'react'
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { PageStyles } from '@/components/globalStyles/pageStyles'
-import Button from '@/components/button'
 import { useRouter } from 'expo-router'
+import { Eye, EyeOff, LockKeyhole, Mail, Phone } from 'lucide-react-native'
+
+import { ThemedText } from '@/components/themed-text'
+import Button from '@/components/button'
 import { Colors } from '@/constants/theme'
-import { useColorScheme } from '@/hooks/use-color-scheme'
-import { Eye, EyeClosed, LockKeyhole, Mail} from 'lucide-react-native'
-import usePageThemeRender  from '@/components/globalStyles/pageThemeRender'
+import usePageThemeRender from '@/components/globalStyles/pageThemeRender'
+import { useAuth, homeRouteFor, AuthError } from '@/contexts/AuthContext'
+import { validateEmailOrPhone, validatePassword } from '@/utils/validation'
 
 export default function Login() {
   const router = useRouter()
-  const colorScheme = useColorScheme()
-  const colorThemeRenderer = usePageThemeRender()
-
-  const [email_PhoneNumber, setEmail_PhoneNumber] = useState('')
+  const theme = usePageThemeRender()
+  const { signIn, pending } = useAuth()
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
-  const [viewPassword, setViewPassword] = useState(true)
-  
-  const isValid =  email_PhoneNumber &&  password 
+  const [visible, setVisible] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSubmit= () => {
-    router.replace('/(tenantScreens)')
+  const submit = async () => {
+    const identifierError = validateEmailOrPhone(identifier)
+    const passwordError = validatePassword(password)
+    if (identifierError || passwordError) { setError(identifierError || passwordError || 'Check your details'); return }
+    setError('')
+    try { const user = await signIn(identifier, password); router.replace(homeRouteFor(user.role)) }
+    catch (err) { setError(err instanceof AuthError ? err.message : 'Unable to sign in right now') }
   }
-    
+
   return (
-    <SafeAreaView style={[PageStyles.container, {backgroundColor: Colors[colorScheme ?? 'light'].background}]}>
-        <KeyboardAvoidingView style={{flex: 1}}
-            behavior = {Platform.OS === 'android' ? 'height' : 'padding'} 
-        >
-        <ScrollView
-            keyboardShouldPersistTaps = "handled"
-            contentContainerStyle={{
-                paddingBottom: 40
-            }}
-            style={[PageStyles.formContainer, {borderColor: colorThemeRenderer.borderColor,
-                backgroundColor: colorScheme === 'light' ? Colors.light.background : Colors.dark.background,
-            }]}
-            showsVerticalScrollIndicator = {false}
-        >
-            <ThemedView style={{display: 'flex', gap: 15, marginVertical: 30}}>
-                <ThemedText style={[PageStyles.formTitle, {color: colorThemeRenderer.oppositeTextColor}]}>Log into your account</ThemedText>
-                <ThemedText type='description'>Secure access to your santuary</ThemedText>
-            </ThemedView>
+  <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
+    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={styles.content} 
+        keyboardShouldPersistTaps="handled" 
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.brand}>
+          <View style={[styles.brandMark, { backgroundColor: Colors.light.tint }]}>
+            <ThemedText style={styles.brandMarkText}>H</ThemedText>
+          </View>
+          <ThemedText style={[styles.brandText, { color: theme.oppositeTextColor }]}>HabiSwift</ThemedText>
+        </View>
 
-            <ThemedView style={PageStyles.form}>
-                {/* Email Address or Phone Number */}
-                <ThemedView>
-                    <ThemedText style={[PageStyles.label, {color: colorThemeRenderer.label}]}>Email Address</ThemedText>
-                    <ThemedView style={[PageStyles.inputContainer, {
-                        borderColor: colorThemeRenderer.borderColor,
-                        backgroundColor: colorScheme === 'light' ? '#F8FAFC' : '#1E293B'
-                    }]}>
-                        <Mail size={24} color={Colors[colorScheme ?? 'light'].icon}/>
-                        <TextInput style={[PageStyles.textInput, {
-                                color:  colorThemeRenderer.fontColor
-                            }]} 
-                            placeholder='Enter email or phone number'
-                            placeholderTextColor={colorThemeRenderer.fontColor}
-                            value={email_PhoneNumber}
-                            onChangeText={setEmail_PhoneNumber}
-                            inputMode='email'
-                        />
-                    </ThemedView>
-                </ThemedView>
+        <View style={styles.intro}>
+          <ThemedText style={[styles.title, { color: theme.oppositeTextColor }]}>Welcome back</ThemedText>
+          <ThemedText style={{ color: theme.secondaryFontColor, marginTop: 8 }}>Sign in to continue finding or managing your next home.</ThemedText>
+        </View>
 
-                {/* Password */}
-                <ThemedView>
-                    <ThemedText style={[PageStyles.label, {color: colorThemeRenderer.label}]}>Password</ThemedText>
-                    <ThemedView style={[PageStyles.inputContainer, {
-                    borderColor: colorThemeRenderer.borderColor,
-                    backgroundColor: colorScheme === 'light' ? '#F8FAFC' : '#1E293B'
-                    }]}
-                    >
-                        <LockKeyhole size={24} color={Colors[colorScheme ?? 'light'].icon}/>
-                        <TextInput style={[PageStyles.textInput, {
-                            color: colorThemeRenderer.fontColor
-                            }]} 
-                            placeholder='Enter your password'
-                            placeholderTextColor={colorThemeRenderer.fontColor}
-                            secureTextEntry={viewPassword}
-                            value={password}
-                            onChangeText={setPassword}
-                        />
-                        <Pressable onPress={() => setViewPassword(prev => !prev)}
-                            style={{marginRight: 8}}
-                        >
-                            {
-                            viewPassword === true ? (<EyeClosed color={Colors[colorScheme ?? 'light'].icon}/>)
-                            : (<Eye color={Colors[colorScheme ?? 'light'].icon}/>)
-                            }
-                        </Pressable>
-                    </ThemedView>
-                </ThemedView>
+        <Field label="Email or phone number" value={identifier} 
+          onChangeText={setIdentifier} placeholder="you@example.com" theme={theme} 
+          icon={identifier.includes('@') ? <Mail size={19} 
+          color={theme.icon} 
+        /> : 
+        <Phone size={19} color={theme.icon} />} autoCapitalize="none" />
 
-                <ThemedText type='link' style={{marginTop: -10, marginBottom: 20, alignSelf: 'flex-end', color: colorThemeRenderer.link}}
-                    onPress={() => router.push('/')}
-                >
-                    Forgot Password?
-                </ThemedText>
-            </ThemedView>
+        <View style={styles.field}>
+          <ThemedText style={[styles.label, { color: theme.label }]}>Password</ThemedText>
+          <View style={[styles.inputWrap, { backgroundColor: theme.cardBackground, borderColor: theme.borderColor }]}>
+            <LockKeyhole size={19} color={theme.icon} />
+            <TextInput 
+              value={password} 
+              onChangeText={setPassword} 
+              placeholder="Enter your password" placeholderTextColor={theme.icon} 
+              secureTextEntry={!visible} 
+              style={[styles.input, { color: theme.oppositeTextColor }]} 
+            />
+            <Pressable onPress={() => setVisible((value) => !value)} hitSlop={8}>
+              {visible ? <EyeOff size={19} color={theme.icon} /> : <Eye size={19} color={theme.icon} />}
+            </Pressable>
+          </View>
+        </View>
+
+        <Pressable onPress={() => router.push('/auth/forgotPassword')} style={styles.forgot}>
+          <ThemedText style={{ color: theme.link, fontWeight: '700' }}>Forgot password?</ThemedText>
+        </Pressable>
         
-          <Button
-            action={handleSubmit}
-            disabled={!isValid}
-          >
-            <ThemedText type='placeholderText'>Login</ThemedText>
-          </Button>
+        {
+          error ? <ThemedText style={[styles.error, { color: theme.danger }]}>{error}</ThemedText> : null
+        }
 
-            <ThemedView style={PageStyles.continueWith}>
-                <ThemedView style={[PageStyles.line,{
-                        backgroundColor: Colors[colorScheme ?? 'light'].icon
-                    }]} 
-                />
-                <ThemedText style={{marginHorizontal: 10}}>
-                    OR CONTINUE WITH
-                </ThemedText>
-                <ThemedView style={[PageStyles.line,{
-                        backgroundColor: Colors[colorScheme ?? 'light'].icon
-                    }]} 
-                />
-            </ThemedView>
+        <Button action={submit} disabled={pending}>
+          {pending ? <ActivityIndicator color="#fff" /> : <ThemedText type="placeholderText">Sign in</ThemedText>}
+        </Button>
 
-            <ThemedView style={PageStyles.authOptionContainer}>
-                <TouchableOpacity 
-                    activeOpacity={0.5}
-                    style={[PageStyles.authOptionButton, {
-                        borderColor: colorThemeRenderer.borderColor
-                    }]}
-                >
-                    <Image source={require('@/assets/icons/google.png')} style={PageStyles.authIcon}/>
-                    <ThemedText style={PageStyles.authText}>Google</ThemedText>
-                </TouchableOpacity>
+        <View style={styles.divider}>
+          <View style={[styles.line, { backgroundColor: theme.borderColor }]} />
+          <ThemedText style={{ color: theme.secondaryFontColor, fontSize: 12 }}>NEW TO HABISWIFT?</ThemedText>
+          <View style={[styles.line, { backgroundColor: theme.borderColor }]} />
+        </View>
 
-                <TouchableOpacity 
-                    activeOpacity={0.5}
-                    style={[PageStyles.authOptionButton, {
-                        borderColor: colorThemeRenderer.borderColor
-                    }]}
-                >
-                    <Image source={require('@/assets/icons/facebook.png')} style={PageStyles.authIcon}/>
-                    <ThemedText style={PageStyles.authText}>Facebook</ThemedText>
-                </TouchableOpacity>
-            </ThemedView>
+        <Pressable onPress={() => router.replace('/(onboarding)/role')} 
+          style={[styles.outlineButton, { borderColor: theme.borderColor, backgroundColor: theme.cardBackground }]}
+        >
+          <ThemedText style={{ color: theme.oppositeTextColor, fontWeight: '800' }}>Create an account</ThemedText>
+        </Pressable>
 
-            <ThemedView style={PageStyles.bottomFormText}>
-                <ThemedText type='description'>Don't have an account?</ThemedText>
-                <ThemedText type='link' onPress={() => router.replace('/(onboarding)/role')} style={{color: colorThemeRenderer.link}}>Signup</ThemedText>
-            </ThemedView>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
-      
+      </ScrollView>
+    </KeyboardAvoidingView>
+  </SafeAreaView>
   )
 }
 
-const styles = StyleSheet.create({})
+function Field({ label, value, onChangeText, placeholder, theme, icon, autoCapitalize }: { label: string; value: string; onChangeText: (value: string) => void; placeholder: string; theme: ReturnType<typeof usePageThemeRender>; icon: React.ReactNode; autoCapitalize?: 'none' | 'sentences' }) { return <View style={styles.field}><ThemedText style={[styles.label, { color: theme.label }]}>{label}</ThemedText><View style={[styles.inputWrap, { backgroundColor: theme.cardBackground, borderColor: theme.borderColor }]}>{icon}<TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={theme.icon} autoCapitalize={autoCapitalize} keyboardType={label.includes('phone') ? 'phone-pad' : 'email-address'} style={[styles.input, { color: theme.oppositeTextColor }]} /></View></View> }
+
+const styles = StyleSheet.create({
+  screen: { flex: 1 }, 
+  content: { 
+    paddingHorizontal: 22, 
+    paddingBottom: 34 
+  }, 
+  brand: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 9, 
+    marginTop: 18 
+  }, 
+  brandMark: { 
+    width: 34, 
+    height: 34, 
+    borderRadius: 11, 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  }, 
+  brandMarkText: { 
+    color: '#fff', 
+    fontSize: 20, 
+    fontWeight: '900' 
+  }, 
+  brandText: { 
+    fontSize: 18, 
+    fontWeight: '900' 
+  }, 
+  intro: { 
+    marginTop: 52, 
+    marginBottom: 30 
+  }, 
+  title: { 
+    fontSize: 30, 
+    fontWeight: '900' 
+  }, 
+  field: { marginBottom: 17 }, 
+  label: { 
+    fontSize: 13, 
+    fontWeight: '700', 
+    marginBottom: 7 
+  }, 
+  inputWrap: { 
+    minHeight: 54, 
+    borderRadius: 15, 
+    borderWidth: 1, 
+    paddingHorizontal: 14, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 10 
+  }, 
+  input: { 
+    flex: 1, 
+    fontSize: 15, 
+    paddingVertical: 14 
+  }, 
+  forgot: { 
+    alignSelf: 'flex-end', 
+    marginTop: -2, 
+    marginBottom: 16 
+  }, 
+  error: { 
+    fontSize: 13, 
+    marginBottom: 12, 
+    lineHeight: 18 
+  }, 
+  divider: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 10, 
+    marginVertical: 26 
+  }, 
+  line: { 
+    height: 1, 
+    flex: 1 
+  }, 
+  outlineButton: { 
+    minHeight: 54, 
+    borderRadius: 27, 
+    borderWidth: 1, 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  }
+})
