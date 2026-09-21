@@ -1,282 +1,36 @@
-import { StyleSheet, TextInput, View, Pressable, ScrollView, KeyboardAvoidingView, Platform, Text } from 'react-native'
-import { ThemedText } from '@/components/themed-text'
-import { ThemedView } from '@/components/themed-view'
 import React, { useState } from 'react'
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { PageStyles } from '@/components/globalStyles/pageStyles'
-import Button from '@/components/button'
 import { useRouter } from 'expo-router'
+import { Check, Eye, EyeOff, LockKeyhole, Mail, Phone, UserRound } from 'lucide-react-native'
+
+import { ThemedText } from '@/components/themed-text'
+import Button from '@/components/button'
 import { Colors } from '@/constants/theme'
-import { useColorScheme } from '@/hooks/use-color-scheme'
-import { Eye, EyeClosed, LockKeyhole, Mail, Phone, UserRound } from 'lucide-react-native'
-import usePageThemeRender  from '@/components/globalStyles/pageThemeRender'
+import usePageThemeRender from '@/components/globalStyles/pageThemeRender'
+import { AuthError, homeRouteFor, useAuth } from '@/contexts/AuthContext'
+import { assessPassword, validateConfirmPassword, validateEmail, validateFullName, validatePhone, validatePassword } from '@/utils/validation'
 
 export default function SeekerSignUp() {
-    const router = useRouter()
-    const colorScheme = useColorScheme()
-    const colorThemeRenderer = usePageThemeRender()
-
-    const [fullName, setFullName] = useState('')
-    const [email, setEmail] = useState('')
-    const [phoneNumber, setPhoneNumber] = useState('')
-    const [password, setPassword] = useState('')
-    const [confirmPassword, setConfirmPassword] = useState('')
-    const [viewPassword, setViewPassword] = useState(true)
-    
-    const [error, setError] = useState({
-        fullName: '',
-        email: '',
-        phoneNumber: '',
-        password: '',
-        confirmPassword: ''
-    })
-    const [agreed, setAgreed] = useState(false);
-    const isValid = fullName && email && phoneNumber && password && confirmPassword && agreed
-
-    const handleSubmit= () => {
-        const newErrors = {
-            fullName: !fullName ? 'Full name is required' : '',
-            email: !email ? 'Email is required' : '',
-            phoneNumber: !phoneNumber ? 'Phone number is required' : '',
-            password: !password ? 'Password is required' : '',
-            confirmPassword: !confirmPassword ? 'Re-enter password to confirm' : '',
-        }
-        setError(newErrors)
-
-
-        if (Object.values(newErrors).some(e => e)) return;
-
-        router.replace('/(tenantScreens)')
-    }
-    
-    return (
-        <SafeAreaView style={[PageStyles.container, {backgroundColor: Colors[colorScheme ?? 'light'].background}]}>
-            <KeyboardAvoidingView style={{flex: 1}}
-                behavior = {Platform.OS === 'android' ? 'height' : 'padding'}
-                
-            >
-
-                <ScrollView
-                    keyboardShouldPersistTaps = "handled"
-                    contentContainerStyle={{
-                        paddingBottom: 40
-                    }}
-                    style={[PageStyles.formContainer, {borderColor: colorThemeRenderer.borderColor,
-                        backgroundColor: colorScheme === 'light' ? Colors.light.background : Colors.dark.background,
-                    }]}
-                    showsVerticalScrollIndicator = {false}
-                >
-                    <ThemedView style={{display: 'flex', gap: 15, marginVertical: 30}}>
-                        <ThemedText style={[PageStyles.formTitle, {color: colorThemeRenderer.oppositeTextColor}]}>Create your account</ThemedText>
-                        <ThemedText type='description'>Join Habitex and start our journey with us today</ThemedText>
-                    </ThemedView>
-
-                    <ThemedView style={PageStyles.form}>
-                        {/* Full name */}
-                        <ThemedView>
-                            <ThemedText style={[PageStyles.label, {color: colorThemeRenderer.label}]}>Full Name</ThemedText>
-                            <ThemedView style={[PageStyles.inputContainer, {
-                                borderColor: error.fullName ? 'red' : colorThemeRenderer.borderColor,
-                                backgroundColor: colorThemeRenderer.secondaryBackground
-                            }]}>
-                                <UserRound size={24} color={Colors[colorScheme ?? 'light'].icon}/>
-                                <TextInput style={[PageStyles.textInput, {
-                                        color: colorThemeRenderer.fontColor
-                                    }]} 
-                                    placeholder='John Doe'
-                                    placeholderTextColor={colorThemeRenderer.fontColor}
-                                    value={fullName}
-                                    onChangeText={setFullName}
-                                />
-                            </ThemedView>
-                            
-                            {error.fullName && (
-                                <ThemedText style={PageStyles.errorText}>
-                                    {error.fullName}
-                                </ThemedText>
-                            )}
-                        </ThemedView>
-
-                        {/* Email Address */}
-                        <ThemedView>
-                            <ThemedText style={[PageStyles.label, {color: colorThemeRenderer.label}]}>Email Address</ThemedText>
-                            <ThemedView style={[PageStyles.inputContainer, {
-                                borderColor: error.email ? 'red' : colorThemeRenderer.borderColor,
-                                backgroundColor: colorThemeRenderer.secondaryBackground
-                            }]}>
-                                <Mail size={24} color={Colors[colorScheme ?? 'light'].icon}/>
-                                <TextInput style={[PageStyles.textInput, {
-                                        color:  colorThemeRenderer.fontColor
-                                    }]} 
-                                    placeholder='example@gmail.com'
-                                    placeholderTextColor={colorThemeRenderer.fontColor}
-                                    value={email}
-                                    onChangeText={setEmail}
-                                    inputMode='email'
-                                />
-                            </ThemedView>
-
-                            {error.email && (
-                                <ThemedText style={PageStyles.errorText}>
-                                    {error.email}
-                                </ThemedText>
-                            )}
-                        </ThemedView>
-
-                        {/* Phone Number */}
-                        <ThemedView>
-                            <ThemedText style={[PageStyles.label, {color: colorThemeRenderer.label}]}>Phone Number</ThemedText>
-                            <ThemedView style={[PageStyles.inputContainer, {
-                                borderColor: error.phoneNumber ? 'red' : colorThemeRenderer.borderColor,
-                                backgroundColor: colorThemeRenderer.secondaryBackground
-                            }]}>
-                                <Phone size={24} color={Colors[colorScheme ?? 'light'].icon}/>
-                                <TextInput style={[PageStyles.textInput, {
-                                        color: colorThemeRenderer.fontColor
-                                    }]} 
-                                    placeholder='+1 (123) 456-7890'
-                                    placeholderTextColor={colorThemeRenderer.fontColor}
-                                    value={phoneNumber}
-                                    onChangeText={setPhoneNumber}
-                                    inputMode='tel'
-                                />
-                            </ThemedView>
-
-                            {error.phoneNumber && (
-                                <ThemedText style={PageStyles.errorText}>
-                                    {error.phoneNumber}
-                                </ThemedText>
-                            )}
-                        </ThemedView>
-
-                        {/* Password */}
-                        <ThemedView>
-                            <ThemedText style={[PageStyles.label, {color: colorThemeRenderer.label}]}>Password</ThemedText>
-                            <ThemedView style={[PageStyles.inputContainer, {
-                                borderColor: error.password ? 'red' : colorThemeRenderer.borderColor,
-                                backgroundColor: colorThemeRenderer.secondaryBackground
-                            }]}>
-                                <LockKeyhole size={24} color={Colors[colorScheme ?? 'light'].icon}/>
-                                <TextInput style={[PageStyles.textInput, {
-                                        color: colorThemeRenderer.fontColor
-                                    }]} 
-                                    placeholder='Enter your password'
-                                    placeholderTextColor={colorThemeRenderer.fontColor}
-                                    secureTextEntry={viewPassword}
-                                    value={password}
-                                    onChangeText={setPassword}
-                                />
-                                <Pressable onPress={() => setViewPassword(prev => !prev)}
-                                    style={{marginRight: 8}}
-                                >
-                                    {
-                                        viewPassword === true ? (<EyeClosed color={Colors[colorScheme ?? 'light'].icon}/>)
-                                        : (<Eye color={Colors[colorScheme ?? 'light'].icon}/>)
-                                        
-                                    }
-                                </Pressable>
-                                
-                            </ThemedView>
-
-                            {error.password && (
-                                <ThemedText style={PageStyles.errorText}>
-                                    {error.password}
-                                </ThemedText>
-                            )}
-                        </ThemedView>
-
-                        {/* Confirm Password*/}
-                        <ThemedView>
-                            <ThemedText style={[PageStyles.label, {color: colorThemeRenderer.label}]}>Confirm Password</ThemedText>
-                            <ThemedView style={[PageStyles.inputContainer, {
-                                borderColor: error.confirmPassword ? 'red' : colorThemeRenderer.borderColor,
-                                backgroundColor: colorThemeRenderer.secondaryBackground
-                            }]}>
-                                <LockKeyhole size={24} color={Colors[colorScheme ?? 'light'].icon}/>
-                                <TextInput style={[PageStyles.textInput, {
-                                        color: colorThemeRenderer.fontColor
-                                    }]} 
-                                    placeholder='Confirm Password'
-                                    placeholderTextColor={colorThemeRenderer.fontColor}
-                                    secureTextEntry = {viewPassword}
-                                    value={confirmPassword}
-                                    onChangeText={setConfirmPassword}
-                                />
-
-                                <Pressable onPress={() => setViewPassword(prev => !prev)}
-                                    style={{marginRight: 8}}
-                                >
-                                    {
-                                        viewPassword === true ? (<EyeClosed color={Colors[colorScheme ?? 'light'].icon}/>)
-                                        : (<Eye color={Colors[colorScheme ?? 'light'].icon}/>)
-                                        
-                                    }
-                                </Pressable>
-                            </ThemedView>
-
-                            {error.confirmPassword && (
-                                <ThemedText style={PageStyles.errorText}>
-                                    {error.confirmPassword}
-                                </ThemedText>
-                            )}
-                        </ThemedView>
-                    </ThemedView>
-
-                    <ThemedView style={{marginBottom: 10, alignContent: 'center'}}>
-                        <Pressable
-                            onPress={() => setAgreed(!agreed)}
-                            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 5 }}
-                        >
-                            {/* Box */}
-                            <View
-                                style={{
-                                width: 22,
-                                height: 22,
-                                borderRadius: 6,
-                                borderWidth: 2,
-                                borderColor: 'gray',
-                                backgroundColor: agreed ? 'gray' :  'transparent',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                }}
-                            >
-                                {agreed && (
-                                <View
-                                    style={{
-                                    width: 10,
-                                    height: 10,
-                                    backgroundColor: 'gray',
-                                    borderRadius: 2,
-                                    }}
-                                />
-                                )}
-                            </View>
-
-                            <ThemedText type='description'>
-                                By signing up, you agree to our <ThemedText type='link'>Terms of Service</ThemedText> and
-                                <ThemedText type='link'> Privacy Policy</ThemedText>
-                            </ThemedText>
-                        </Pressable>
-                    </ThemedView>
-                    
-                    <Button
-                        action={handleSubmit}
-                        disabled={!agreed}
-                    >
-                        <ThemedText type='placeholderText'>Sign Up</ThemedText>
-                    </Button>
-
-                    <ThemedView style={PageStyles.bottomFormText}>
-                        <ThemedText type='description'>Already have an account?</ThemedText>
-                        <Pressable onPress={() => router.replace('/auth')}>
-                            <ThemedText type='link' style={{color: colorThemeRenderer.link}}>Login</ThemedText>
-                        </Pressable>
-                    </ThemedView>
-                </ScrollView>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
-        
-    )
+  const router = useRouter(); const theme = usePageThemeRender(); const { signUp, pending } = useAuth()
+  const [form, setForm] = useState({ fullName: '', email: '', phone: '', password: '', confirm: '' }); const [visible, setVisible] = useState(false); const [agreed, setAgreed] = useState(false); const [error, setError] = useState('')
+  const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }))
+  const submit = async () => {
+    const errors = [validateFullName(form.fullName), validateEmail(form.email), validatePhone(form.phone), validatePassword(form.password), validateConfirmPassword(form.password)(form.confirm)]
+    if (errors.some(Boolean)) { setError(errors.find(Boolean) || 'Check your details'); return }
+    if (!agreed) { setError('Accept the terms to continue'); return }
+    setError('')
+    try { const user = await signUp({ fullName: form.fullName, email: form.email, phone: form.phone, password: form.password, role: 'tenant' }); router.replace(homeRouteFor(user.role)) } catch (err) { setError(err instanceof AuthError ? err.message : 'Unable to create your account right now') }
+  }
+  const password = assessPassword(form.password)
+  return <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}><KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+    <View style={styles.top}><Pressable onPress={() => router.back()}><ThemedText style={{ color: theme.link, fontWeight: '700' }}>Back</ThemedText></Pressable><ThemedText style={{ color: theme.secondaryFontColor, fontSize: 12 }}>TENANT ACCOUNT</ThemedText></View><View style={styles.intro}><ThemedText style={[styles.title, { color: theme.oppositeTextColor }]}>Find your next home</ThemedText><ThemedText style={{ color: theme.secondaryFontColor, marginTop: 8 }}>Create an account to save homes and message landlords.</ThemedText></View>
+    <Field label="Full name" value={form.fullName} onChangeText={(v) => update('fullName', v)} placeholder="Ama Mensah" theme={theme} icon={<UserRound size={19} color={theme.icon} />} autoCapitalize="words" /><Field label="Email address" value={form.email} onChangeText={(v) => update('email', v)} placeholder="ama@example.com" theme={theme} icon={<Mail size={19} color={theme.icon} />} autoCapitalize="none" /><Field label="Phone number" value={form.phone} onChangeText={(v) => update('phone', v)} placeholder="024 123 4567" theme={theme} icon={<Phone size={19} color={theme.icon} />} keyboardType="phone-pad" />
+    <PasswordField label="Password" value={form.password} onChangeText={(v) => update('password', v)} visible={visible} onToggle={() => setVisible((value) => !value)} theme={theme} /><View style={styles.strength}><View style={styles.bars}>{[0, 1, 2].map((index) => <View key={index} style={[styles.bar, { backgroundColor: index < password.score ? (password.strength === 'strong' ? '#16A34A' : '#F59E0B') : theme.borderColor }]} />)}</View><ThemedText style={{ color: theme.secondaryFontColor, fontSize: 12 }}>{form.password ? password.hint : 'Use 8+ characters with a number'}</ThemedText></View><PasswordField label="Confirm password" value={form.confirm} onChangeText={(v) => update('confirm', v)} visible={visible} onToggle={() => setVisible((value) => !value)} theme={theme} />
+    <Pressable onPress={() => setAgreed((value) => !value)} style={styles.agreement}><View style={[styles.checkbox, { borderColor: agreed ? Colors.light.tint : theme.borderColor, backgroundColor: agreed ? Colors.light.tint : theme.cardBackground }]}>{agreed && <Check size={14} color="#fff" />}</View><ThemedText style={{ color: theme.secondaryFontColor, flex: 1, fontSize: 13, lineHeight: 19 }}>I agree to the HabiSwift terms and privacy policy.</ThemedText></Pressable>{error ? <ThemedText style={[styles.error, { color: theme.danger }]}>{error}</ThemedText> : null}<Button action={submit} disabled={pending}>{pending ? <ActivityIndicator color="#fff" /> : <ThemedText type="placeholderText">Create account</ThemedText>}</Button><View style={styles.footer}><ThemedText style={{ color: theme.secondaryFontColor }}>Already have an account?</ThemedText><Pressable onPress={() => router.replace('/auth')}><ThemedText style={{ color: theme.link, fontWeight: '800' }}> Sign in</ThemedText></Pressable></View>
+  </ScrollView></KeyboardAvoidingView></SafeAreaView>
 }
 
-const styles = StyleSheet.create({})
+function Field({ label, value, onChangeText, placeholder, theme, icon, autoCapitalize, keyboardType }: { label: string; value: string; onChangeText: (value: string) => void; placeholder: string; theme: ReturnType<typeof usePageThemeRender>; icon: React.ReactNode; autoCapitalize?: 'none' | 'words'; keyboardType?: 'default' | 'phone-pad' }) { return <View style={styles.field}><ThemedText style={[styles.label, { color: theme.label }]}>{label}</ThemedText><View style={[styles.inputWrap, { backgroundColor: theme.cardBackground, borderColor: theme.borderColor }]}>{icon}<TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={theme.icon} autoCapitalize={autoCapitalize} keyboardType={keyboardType} style={[styles.input, { color: theme.oppositeTextColor }]} /></View></View> }
+function PasswordField({ label, value, onChangeText, visible, onToggle, theme }: { label: string; value: string; onChangeText: (value: string) => void; visible: boolean; onToggle: () => void; theme: ReturnType<typeof usePageThemeRender> }) { return <View style={styles.field}><ThemedText style={[styles.label, { color: theme.label }]}>{label}</ThemedText><View style={[styles.inputWrap, { backgroundColor: theme.cardBackground, borderColor: theme.borderColor }]}><LockKeyhole size={19} color={theme.icon} /><TextInput value={value} onChangeText={onChangeText} placeholder="Create a password" placeholderTextColor={theme.icon} secureTextEntry={!visible} style={[styles.input, { color: theme.oppositeTextColor }]} /><Pressable onPress={onToggle} hitSlop={8}>{visible ? <EyeOff size={19} color={theme.icon} /> : <Eye size={19} color={theme.icon} />}</Pressable></View></View> }
+const styles = StyleSheet.create({ screen: { flex: 1 }, content: { paddingHorizontal: 22, paddingBottom: 34 }, top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }, intro: { marginTop: 35, marginBottom: 25 }, title: { fontSize: 28, fontWeight: '900' }, field: { marginBottom: 15 }, label: { fontSize: 13, fontWeight: '700', marginBottom: 7 }, inputWrap: { minHeight: 53, borderRadius: 15, borderWidth: 1, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }, input: { flex: 1, fontSize: 15, paddingVertical: 13 }, strength: { marginTop: -5, marginBottom: 14, gap: 6 }, bars: { flexDirection: 'row', gap: 5 }, bar: { height: 4, borderRadius: 2, flex: 1 }, agreement: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 8 }, checkbox: { width: 22, height: 22, borderWidth: 1, borderRadius: 6, alignItems: 'center', justifyContent: 'center' }, error: { fontSize: 13, lineHeight: 18, marginVertical: 10 }, footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 } })

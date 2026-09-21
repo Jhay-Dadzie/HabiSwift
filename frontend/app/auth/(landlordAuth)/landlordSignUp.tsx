@@ -7,14 +7,18 @@ import Button from '@/components/button'
 import { useRouter } from 'expo-router'
 import { Colors } from '@/constants/theme'
 import { useColorScheme } from '@/hooks/use-color-scheme'
+import { ActivityIndicator } from 'react-native'
 import { Eye, EyeClosed, LockKeyhole, Mail, Phone, UserRound, MoveRight } from 'lucide-react-native'
 import usePageThemeRender  from '@/components/globalStyles/pageThemeRender'
 import * as Progress from 'react-native-progress'
+import { useAuth } from '@/contexts/AuthContext'
+import { validateEmail, validateFullName, validatePassword, validatePhone } from '@/utils/validation'
 
-export default function SeekerSignUp() {
+export default function LandlordSignUp() {
     const router = useRouter()
     const colorScheme = useColorScheme()
     const colorThemeRenderer = usePageThemeRender()
+    const { signUp, pending } = useAuth()
     const dimension = Dimensions.get('window').width
 
     const [progress, setProgress] = useState(0)
@@ -34,21 +38,26 @@ export default function SeekerSignUp() {
         phoneNumber: '',
         password: '',
     })
-    const isValid = fullName && email && phoneNumber && password
+    const isValid = fullName.trim().length > 0 && email.trim().length > 0 && phoneNumber.trim().length > 0 && password.length > 0
 
-    const handleSubmit= () => {
+    const handleSubmit= async () => {
         const newErrors = {
-            fullName: !fullName ? 'Full name is required' : '',
-            email: !email ? 'Email is required' : '',
-            phoneNumber: !phoneNumber ? 'Phone number is required' : '',
-            password: !password ? 'Password is required' : '',
+            fullName: validateFullName(fullName) ?? '',
+            email: validateEmail(email) ?? '',
+            phoneNumber: validatePhone(phoneNumber) ?? '',
+            password: validatePassword(password) ?? '',
         }
         setError(newErrors)
 
 
         if (Object.values(newErrors).some(e => e)) return;
 
-        router.push('/auth/cardIdentity')
+        try {
+            await signUp({ fullName, email, phone: phoneNumber, password, role: 'landlord' })
+            router.push('/auth/cardIdentity')
+        } catch {
+            setError((current) => ({ ...current, email: 'An account with these details may already exist' }))
+        }
     }
     
     return (
@@ -208,9 +217,8 @@ export default function SeekerSignUp() {
                 </ThemedView>
 
                 <ThemedView style={{marginTop: 30}}>
-                    <Button action={handleSubmit} disabled={!isValid}>
-                        <ThemedText type='placeholderText'>Next Step</ThemedText>
-                        <MoveRight color={'#fff'}/>
+                    <Button action={handleSubmit} disabled={!isValid || pending}>
+                        {pending ? <ActivityIndicator color="#fff" /> : <><ThemedText type='placeholderText'>Next Step</ThemedText><MoveRight color={'#fff'}/></>}
                     </Button>
                 </ThemedView>
                 

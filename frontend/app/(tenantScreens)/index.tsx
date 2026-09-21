@@ -1,354 +1,278 @@
-import {
-  StyleSheet,
-  Image,
-  ScrollView,
-  View,
-  TouchableOpacity,
-  FlatList,
-  Dimensions,
-} from 'react-native'
-import { ThemedText } from '@/components/themed-text'
-import { ThemedView } from '@/components/themed-view'
-import React, { useState } from 'react'
-import { PageStyles } from '@/components/globalStyles/pageStyles'
+import React, { useCallback, useMemo, useState } from 'react'
+import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { Colors } from '@/constants/theme'
+import { Bell } from 'lucide-react-native'
+
+import { ThemedText } from '@/components/themed-text'
+import SearchBar from '@/components/searchBar'
+import { Chip } from '@/components/chip'
+import FilterSheet from '@/components/filterSheet'
+import EmptyState from '@/components/emptyState'
+import { CARD_SIZES, CardVariant, ListingCard } from '@/components/listing/listingCard'
 import usePageThemeRender from '@/components/globalStyles/pageThemeRender'
 import { useColorScheme } from '@/hooks/use-color-scheme'
-import mockData from '@/assets/data/mock_data.json'
-import { BedDouble, Bell, Heart, MapPin, Star } from 'lucide-react-native'
-import { Ionicons } from "@expo/vector-icons"
-import SearchBar from '@/components/searchBar'
-import { CardStyles } from '@/components/globalStyles/cardStyles'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { Colors } from '@/constants/theme'
+import { useFilters } from '@/contexts/FiltersContext'
+import { useWishlist } from '@/contexts/WishlistContext'
+import { HOUSE_TYPES, HouseType, Listing, SortKey } from '@/types/listing'
+import { AFFORDABLE, countActiveFilters, NEAR_YOU, RECOMMENDED } from '@/utils/listings'
+import { tapFeedback } from '@/utils/haptics'
 
-const { width } = Dimensions.get('window')
+const QUICK_FILTERS = ['All', ...HOUSE_TYPES] as const
+const RAIL_GAP = 14
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface Listing {
-  id: string
-  type: string
-  price: number
-  currency: string
-  time: string
-  bedrooms: number
-  bathrooms: number
-  location: string
-  amenities: string[]
-  image: string[]
-  rating: number
+function greeting(): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 17) return 'Good afternoon'
+  return 'Good evening'
 }
 
-// ─── Filter chips ─────────────────────────────────────────────────────────────
-const FILTERS = ['All', 'Price', 'Location' ,'Apartment', 'Chamber and Hall', 'Single Room', 'Self-Contained']
+interface RailProps {
+  title: string
+  data: Listing[]
+  variant: CardVariant
+  onSeeAll: () => void
+}
 
-// ─── Derive sections from mock data ──────────────────────────────────────────
-const allListings: Listing[] = mockData as Listing[]
+/**
+ * Horizontal rail of cards. Horizontal lists nested in the vertical page
+ * scroller are fine (different axis), and a fixed item width lets each rail
+ * skip layout measurement entirely.
+ */
+function Rail({ title, data, variant, onSeeAll }: RailProps) {
+  const theme = usePageThemeRender()
+  const itemWidth = CARD_SIZES[variant === 'row' ? 'large' : variant].width + RAIL_GAP
 
-/** Recommended: highest-rated listings (top 10) */
-const recommended = [...allListings]
-  .sort((a, b) => b.rating - a.rating)
-  .slice(0, 10)
+  const renderItem = useCallback(
+    ({ item }: { item: Listing }) => <ListingCard listing={item} variant={variant} />,
+    [variant]
+  )
 
-/** Near you: variety of types (top 10 by rating after recommended) */
-const nearYou = [...allListings]
-  .sort((a, b) => b.rating - a.rating)
-  .slice(10, 20)
-
-// ─── House card (large – for Recommended) ─────────────────────────────────────
-function LargeCard({ item }: { item: Listing }) {
-  const colorThemeRenderer = usePageThemeRender()
-  const colorScheme = useColorScheme()
-  const [liked, setLiked] = useState(false)
+  const getItemLayout = useCallback(
+    (_: ArrayLike<Listing> | null | undefined, index: number) => ({
+      length: itemWidth,
+      offset: itemWidth * index,
+      index,
+    }),
+    [itemWidth]
+  )
 
   return (
-    <TouchableOpacity style={[CardStyles.flexLargeCard, {
-        backgroundColor: colorScheme === 'light' ? '#fff' : Colors.dark.background,
-        borderColor: colorThemeRenderer.borderColor
-      }]} 
-      activeOpacity={0.85}
-    >
-      {/* Single image */}
-      <Image
-        source={{ uri: item.image[0] }}
-        style={CardStyles.flexLargeCardImage}
-        resizeMode="cover"
-      />
-      {/* Type badge */}
-      <View style={[styles.typeBadge, {backgroundColor: Colors[useColorScheme() ?? 'light'].tint}]}>
-        <ThemedText style={styles.typeBadgeText}>{item.type.toUpperCase()}</ThemedText>
+    <View style={styles.rail}>
+      <View style={styles.sectionHeader}>
+        <ThemedText style={[styles.sectionTitle, { color: theme.oppositeTextColor }]}>
+          {title}
+        </ThemedText>
+        <Pressable onPress={onSeeAll} hitSlop={8}>
+          <ThemedText style={[styles.seeAll, { color: theme.link }]}>See all</ThemedText>
+        </Pressable>
       </View>
-      {/* Favourite icon */}
-      <TouchableOpacity onPress={() => setLiked(prev => !prev)} style={[styles.favBtn,
-          {backgroundColor: colorThemeRenderer.secondaryBackground}
-        ]}
-      >
-        {
-          liked ? (<Ionicons name='heart' size={20} color={'red'}/>) :
-          (<Heart size={20} color={colorThemeRenderer.oppositeTextColor}/>)
+
+      <FlatList
+        data={data}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        getItemLayout={getItemLayout}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.railContent}
+        initialNumToRender={3}
+        maxToRenderPerBatch={4}
+        windowSize={5}
+        removeClippedSubviews
+        ListEmptyComponent={
+          <EmptyState
+            compact
+            title="Nothing here yet"
+            subtitle="Try a different house type."
+            style={styles.railEmpty}
+          />
         }
-      </TouchableOpacity>
-
-      {/* Details */}
-      <View style={CardStyles.flexCardDetails}>
-        {/* Price row */}
-        <View style={CardStyles.flexCardRow}>
-          <ThemedText type='price' style={{color: colorThemeRenderer.oppositeTextColor}}>
-            {item.currency} {item.price.toLocaleString()}/{item.time}
-          </ThemedText>
-          <View style={styles.ratingRow}>
-            <Star color={'#EAB308'} size={16} strokeWidth={2.5}/>
-            <ThemedText type='defaultSemiBold' style={{color: colorThemeRenderer.secondaryFontColor}}>
-              {item.rating.toFixed(1)}
-            </ThemedText>
-          </View>
-        </View>
-        {/* Location */}
-        <View style={CardStyles.cardDetailsRowWithIcon}>
-          <MapPin size={18} color={colorThemeRenderer.icon} />
-          <ThemedText style={CardStyles.cardLocation} numberOfLines={1}>
-            {item.location}
-          </ThemedText>
-        </View>
-        {/* Bedrooms */}
-        <View style={CardStyles.cardDetailsRowWithIcon}>
-          <BedDouble size={18} color={Colors[colorScheme ?? 'light'].tint}/>
-          <ThemedText type='defaultSemiBold' style={[{
-            color: colorThemeRenderer.secondaryFontColor
-          }]}>
-            {item.bedrooms} Bedroom{item.bedrooms !== 1 ? 's' : ''}
-          </ThemedText>
-
-        </View>
-      </View>
-    </TouchableOpacity>
+      />
+    </View>
   )
 }
 
-// ─── House card (small – for Near You) ────────────────────────────────────────
-function SmallCard({ item }: { item: Listing }) {
+export default function Home() {
+  const theme = usePageThemeRender()
   const colorScheme = useColorScheme()
-  const colorThemeRenderer = usePageThemeRender()
-  const [liked, setLiked] = useState(false)
-  return (
-    <TouchableOpacity style={[CardStyles.flexSmallCard, {
-        backgroundColor: colorScheme === 'light' ? '#fff' : Colors.dark.background,
-        borderColor: colorThemeRenderer.borderColor
-      }]} 
-      activeOpacity={0.85}
-    >
-      <Image
-        source={{ uri: item.image[0] }}
-        style={CardStyles.flexSmallCardImage}
-        resizeMode="cover"
-      />
-      <View style={[styles.typeBadgeSmall, {backgroundColor: Colors[useColorScheme() ?? 'light'].tint}]}>
-        <ThemedText style={styles.typeBadgeText}>{item.type.toUpperCase()}</ThemedText>
-      </View>
-      {/* Favourite icon */}
-      <TouchableOpacity onPress={() => setLiked(prev => !prev)} style={[styles.favBtnSmall,
-          {backgroundColor: colorThemeRenderer.secondaryBackground}
-        ]}
-      >
-        {
-          liked ? (<Ionicons name='heart' size={16} color={'red'}/>) :
-          (<Heart size={16} color={colorThemeRenderer.oppositeTextColor}/>)
-        }
-      </TouchableOpacity>
-
-      <View style={CardStyles.flexSmallCardDetails}>
-        <View style={CardStyles.flexCardRow}>
-          <ThemedText style={[styles.smallCardPrice, {
-              color: colorThemeRenderer.oppositeTextColor
-            }]}
-          >
-            {item.currency} {item.price.toLocaleString()}/{item.time}
-          </ThemedText>
-          <View style={styles.ratingRow}>
-            <Star color={'#EAB308'} size={14} strokeWidth={2.5}/>
-            <ThemedText type='defaultSemiBold' style={{color: colorThemeRenderer.secondaryFontColor}}>
-              {item.rating.toFixed(1)}
-            </ThemedText>
-          </View>
-        </View>
-        {/*Location*/}
-        <View style={CardStyles.cardDetailsRowWithIcon}>
-          <MapPin size={16} color={colorThemeRenderer.icon} />
-          <ThemedText style={CardStyles.cardLocation} numberOfLines={1}>
-            {item.location}
-          </ThemedText>
-        </View>
-        <View style={CardStyles.cardDetailsRowWithIcon}>
-          <BedDouble size={16} color={Colors[colorScheme ?? 'light'].tint}/>
-          <ThemedText type='defaultSemiBold' style={[{
-            color: colorThemeRenderer.secondaryFontColor
-          }]}>
-            {item.bedrooms} Bedroom{item.bedrooms !== 1 ? 's' : ''}
-          </ThemedText>
-
-        </View>
-      </View>
-    </TouchableOpacity>
-  )
-}
-
-// ─── Main screen ──────────────────────────────────────────────────────────────
-export default function Index() {
-  const colorScheme = useColorScheme()
-  const colorThemeRenderer = usePageThemeRender()
   const router = useRouter()
-  const [activeFilter, setActiveFilter] = useState('All')
+  const { filters, setFilters } = useFilters()
+  const { ids: wishlistIds } = useWishlist()
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false)
 
-  // Filter recommended list based on active chip
-  const filteredRecommended =
-    activeFilter === 'All' || activeFilter === 'Price'
-      ? recommended
-      : recommended.filter((l) => l.type === activeFilter)
+  const activeType = filters.types.length === 1 ? filters.types[0] : 'All'
+  const activeFilterCount = countActiveFilters(filters)
 
-  const filteredNearYou =
-    activeFilter === 'All' || activeFilter === 'Price'
-      ? nearYou
-      : nearYou.filter((l) => l.type === activeFilter)
+  const byActiveType = useCallback(
+    (list: Listing[]) =>
+      filters.types.length ? list.filter((l) => filters.types.includes(l.type)) : list,
+    [filters.types]
+  )
 
-  const bgColor = Colors[colorScheme ?? 'light'].background
+  const recommended = useMemo(() => byActiveType(RECOMMENDED), [byActiveType])
+  const nearYou = useMemo(() => byActiveType(NEAR_YOU), [byActiveType])
+  const affordable = useMemo(() => byActiveType(AFFORDABLE), [byActiveType])
+
+  const onQuickFilter = useCallback(
+    (label: string) => {
+      setFilters({ types: label === 'All' ? [] : [label as HouseType] })
+    },
+    [setFilters]
+  )
+
+  /** "See all" hands the rail's intent to Search as a sort, then navigates. */
+  const seeAll = useCallback(
+    (sort: SortKey) => {
+      tapFeedback()
+      setFilters({ sort })
+      router.push('/(tenantScreens)/search')
+    },
+    [router, setFilters]
+  )
 
   return (
-    <SafeAreaView style={[PageStyles.container, { backgroundColor: bgColor }]}>
-
+    <SafeAreaView
+      edges={['top']}
+      style={[styles.screen, { backgroundColor: theme.background }]}
+    >
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={styles.content}
         stickyHeaderIndices={[1]}
+        scrollEventThrottle={16}
       >
-        {/* ── Header ─────────────────────────────────────────────────────────── */}
-        <ThemedView style={styles.header}>
+        {/* ── Greeting ─────────────────────────────────────────────────────── */}
+        <View style={styles.header}>
           <View style={styles.headerLeft}>
-            {/* Avatar placeholder */}
-            <View style={styles.avatar}>
+            <View style={[styles.avatar, { backgroundColor: Colors[colorScheme].tint }]}>
               <ThemedText style={styles.avatarText}>J</ThemedText>
             </View>
             <View>
-              <ThemedText style={styles.greeting}>Good evening</ThemedText>
-              <ThemedText style={[styles.userName, {color: colorThemeRenderer.oppositeTextColor}]}>Joseph</ThemedText>
+              <ThemedText style={[styles.greeting, { color: theme.secondaryFontColor }]}>
+                {greeting()}
+              </ThemedText>
+              <ThemedText style={[styles.userName, { color: theme.oppositeTextColor }]}>
+                Joseph
+              </ThemedText>
             </View>
           </View>
-          <TouchableOpacity style={[styles.notifBtn, {
-              backgroundColor: colorThemeRenderer.iconContainer,
-              borderColor: colorThemeRenderer.borderColor
-            }]}
+          <Pressable
+            onPress={tapFeedback}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+            style={({ pressed }) => [
+              styles.notifButton,
+              {
+                backgroundColor: theme.iconContainer,
+                borderColor: theme.borderColor,
+                opacity: pressed ? 0.7 : 1,
+              },
+            ]}
           >
-            <Bell size={20} color={colorThemeRenderer.oppositeTextColor}/>
-          </TouchableOpacity>
-        </ThemedView>
+            <Bell size={20} color={theme.oppositeTextColor} />
+          </Pressable>
+        </View>
 
-        {/* ── Search bar ─────────────────────────────────────────────────────── */}
-        <SearchBar autoFocus={false} onPress={() => router.push('/(tenantScreens)/search')}/>
+        {/* ── Sticky search + quick filters ────────────────────────────────── */}
+        <View style={[styles.stickyBlock, { backgroundColor: theme.background }]}>
+          <SearchBar
+            // `focus` tells Search to raise the keyboard; tapping the Search
+            // tab directly should not.
+            onPress={() =>
+              router.push({
+                pathname: '/(tenantScreens)/search',
+                params: { focus: '1' },
+              })
+            }
+            onFilterPress={() => setFilterSheetOpen(true)}
+            activeFilterCount={activeFilterCount}
+            value={filters.query}
+          />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipRow}
+          >
+            {QUICK_FILTERS.map((label) => (
+              <Chip
+                key={label}
+                label={label}
+                active={activeType === label}
+                onPress={onQuickFilter}
+              />
+            ))}
+          </ScrollView>
+        </View>
 
-        {/* ── Filter chips ───────────────────────────────────────────────────── */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={PageStyles.filterRow}
-        >
-          {FILTERS.map((f) => (
-            <TouchableOpacity
-              key={f}
-              style={[PageStyles.filters,
-                activeFilter === f ? {backgroundColor: Colors[colorScheme ?? 'light'].tint} 
-                : {backgroundColor: colorThemeRenderer.secondaryBackground},
-                {
-                  borderColor: colorThemeRenderer.borderColor,
-                }]}
-              onPress={() => setActiveFilter(f)}
-            >
-              <ThemedText
-                style={[PageStyles.filtersText,
-                  activeFilter === f ? {color: '#fff'}
-                  : {color: colorThemeRenderer.secondaryFontColor},
-                ]}
-              >
-                {f}
-              </ThemedText>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* ── Recommended for you ────────────────────────────────────────────── */}
-        <ThemedView style={styles.sectionHeader}>
-          <ThemedText type='title' style={{color: colorThemeRenderer.oppositeTextColor}}>Recommended for you</ThemedText>
-          <TouchableOpacity>
-            <ThemedText type='link' style={{color: colorThemeRenderer.link}}>
-              See all
+        {/* ── Saved shortcut ───────────────────────────────────────────────── */}
+        {wishlistIds.length > 0 && (
+          <Pressable
+            onPress={() => {
+              tapFeedback()
+              router.push('/(tenantScreens)/wishlist')
+            }}
+            style={({ pressed }) => [
+              styles.savedBanner,
+              {
+                backgroundColor: theme.secondaryBackground,
+                borderColor: theme.borderColor,
+                opacity: pressed ? 0.8 : 1,
+              },
+            ]}
+          >
+            <ThemedText style={{ color: theme.oppositeTextColor, fontWeight: '600' }}>
+              {wishlistIds.length} saved home{wishlistIds.length === 1 ? '' : 's'}
             </ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
+            <ThemedText style={{ color: theme.link, fontWeight: '600' }}>View</ThemedText>
+          </Pressable>
+        )}
 
-        <FlatList
-          data={filteredRecommended}
-          keyExtractor={(item) => `rec-${item.id}`}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalList}
-          renderItem={({ item }) => <LargeCard item={item} />}
-          ListEmptyComponent={
-            <View style={{ flex: 1, width: width - 40, justifyContent: 'center', alignItems: 'center' }}>
-              <ThemedView style={PageStyles.emptyStateContainer}>
-                <Image style={PageStyles.emptyStateImage} source={require('@/assets/images/emptyState.png')} />
-                <ThemedText style={[PageStyles.emptyText]}>No listings found.</ThemedText>
-              </ThemedView>
-            </View>
-          }
+        {/* ── Rails ────────────────────────────────────────────────────────── */}
+        <Rail
+          title="Recommended for you"
+          data={recommended}
+          variant="large"
+          onSeeAll={() => seeAll('recommended')}
         />
-
-        {/* ── Houses Near Your Location ──────────────────────────────────────── */}
-        <ThemedView style={styles.sectionHeader}>
-          <ThemedText type='title' style={{color: colorThemeRenderer.oppositeTextColor}}>Houses Near Your Location</ThemedText>
-          <TouchableOpacity>
-            <ThemedText type='link' style={{color: colorThemeRenderer.link}}>See all</ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
-
-        <FlatList
-          data={filteredNearYou}
-          keyExtractor={(item) => `near-${item.id}`}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalList}
-          renderItem={({ item }) => <SmallCard item={item} />}
-          ListEmptyComponent={
-            <View style={{ flex: 1, width: width - 40, justifyContent: 'center', alignItems: 'center' }}>
-              <ThemedView style={PageStyles.emptyStateContainer}>
-                <Image style={PageStyles.emptyStateImage} source={require('@/assets/images/emptyState.png')} />
-                <ThemedText style={[PageStyles.emptyText]}>No listings found.</ThemedText>
-              </ThemedView>
-            </View>
-          }
+        <Rail
+          title="Near your location"
+          data={nearYou}
+          variant="compact"
+          onSeeAll={() => seeAll('nearest')}
         />
-
-        {/* Bottom spacer */}
-        <View style={{ height: 32 }} />
+        <Rail
+          title="Easy on the budget"
+          data={affordable}
+          variant="compact"
+          onSeeAll={() => seeAll('price-asc')}
+        />
       </ScrollView>
+
+      <FilterSheet
+        visible={filterSheetOpen}
+        onClose={() => setFilterSheetOpen(false)}
+      />
     </SafeAreaView>
   )
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-const PURPLE = '#6C63FF'
-
 const styles = StyleSheet.create({
-  contentContainer: {
-    paddingBottom: 20,
+  screen: {
+    flex: 1,
   },
-
-  /* Header */
+  content: {
+    paddingBottom: 28,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 12,
-    backgroundColor: 'transparent',
+    paddingTop: 8,
+    paddingBottom: 16,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -359,7 +283,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: PURPLE,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -370,13 +293,12 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 12,
-    color: '#888',
   },
   userName: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
   },
-  notifBtn: {
+  notifButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -384,100 +306,49 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  filterIconBtn: {
-    justifyContent: 'center',
-    alignItems: 'center',
+  stickyBlock: {
+    paddingBottom: 4,
   },
-
-  /* Chips */
-  
-
-  /* Section header */
+  chipRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  savedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginBottom: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  rail: {
+    marginBottom: 24,
+  },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    marginBottom: 14,
-    backgroundColor: 'transparent',
+    paddingHorizontal: 16,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: '700',
   },
-
-  /* Horizontal lists */
-  horizontalList: {
-    paddingHorizontal: 10,
-    gap: 14,
-    paddingBottom: 4,
-    marginBottom: 24,
+  seeAll: {
+    fontSize: 15,
+    fontWeight: '600',
   },
-
-  /* Large card */
-  
-
-  typeBadge: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  railContent: {
+    paddingHorizontal: 16,
+    gap: RAIL_GAP,
+    paddingBottom: 6,
   },
-  typeBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  favBtn: {
-    position: 'absolute',
-    top: 10,
-    right: 12,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-
-  cardBed: {
-    fontWeight: 500
-  },
-
-  /* Small card */
-  
-  typeBadgeSmall: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    backgroundColor: PURPLE,
-    borderRadius: 7,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  favBtnSmall: {
-    position: 'absolute',
-    top: 8,
-    right: 10,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  smallCardPrice: {
-    fontSize: 16,
-    fontWeight: '700',
+  railEmpty: {
+    width: 260,
   },
 })

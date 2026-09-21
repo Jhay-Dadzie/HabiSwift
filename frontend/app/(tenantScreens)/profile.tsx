@@ -6,6 +6,7 @@ import usePageThemeRender from '@/components/globalStyles/pageThemeRender'
 import { Colors } from '@/constants/theme'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useRouter } from 'expo-router'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { PageStyles } from '@/components/globalStyles/pageStyles'
@@ -24,6 +25,7 @@ export default function Profile() {
   const theme = usePageThemeRender()
   const colorScheme = useColorScheme()
   const { toggleTheme } = useTheme()
+  const router = useRouter()
   const colors = Colors[colorScheme ?? 'light']
   const isLight = colorScheme === 'light'
 
@@ -163,7 +165,9 @@ export default function Profile() {
             style={[
               styles.userName,
               {
-                color: colors.text,
+                // `colors.text` is the muted secondary tone — the account name
+                // is the most important label on the screen.
+                color: theme.oppositeTextColor,
               },
             ]}
           >
@@ -183,6 +187,8 @@ export default function Profile() {
 
         {/* Switch to Landlord Card */}
         <TouchableOpacity
+          onPress={() => router.push('/(landlordScreens)')}
+          activeOpacity={0.9}
           style={[
             styles.landlordCard,
             {
@@ -217,7 +223,15 @@ export default function Profile() {
           </View>
           <Switch
             value={landlordToggle}
-            onValueChange={setLandlordToggle}
+            onValueChange={(value) => {
+              setLandlordToggle(value)
+              // The toggle was inert; send the user to the landlord tabs and
+              // flip back so the control reflects where they actually are.
+              if (value) {
+                router.push('/(landlordScreens)')
+                setLandlordToggle(false)
+              }
+            }}
             thumbColor={landlordToggle ? '#6366F1' : '#fff'}
             trackColor={{
               false: 'rgba(255, 255, 255, 0.3)',
