@@ -95,7 +95,7 @@ export default function OnboardingScreen() {
       {/* Header */}
       <ThemedView style={styles.header}>
         <ThemedText style={styles.logo}>Haven</ThemedText>
-        <Link href={'/role'} asChild>
+        <Link href={'/auth/seekerSignUp'} asChild>
           <ThemedText type='link' style={{color: colorThemeRenderer.link}}>Skip</ThemedText>
         </Link>
         
@@ -149,7 +149,7 @@ export default function OnboardingScreen() {
       {
         currentIndex === 2 && (
           <ThemedView style={{marginTop: 30, marginHorizontal: 20}}>
-            <Button action={() => router.push('/role')}>
+            <Button action={() => router.push('/auth/seekerSignUp')}>
               <ThemedText type='placeholderText'>Get Started</ThemedText>
               <MoveRight color={'#fff'}/>
             </Button>
