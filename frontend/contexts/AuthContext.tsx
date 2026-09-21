@@ -42,7 +42,6 @@ export interface SignUpInput {
   email: string
   phone: string
   password: string
-  role: UserRole
 }
 
 interface AuthContextValue {
@@ -55,6 +54,8 @@ interface AuthContextValue {
   signUp: (input: SignUpInput) => Promise<User>
   signOut: () => Promise<void>
   updateUser: (patch: Partial<User>) => void
+  /** Completes a tenant's landlord verification and unlocks landlord tools. */
+  becomeLandlord: () => void
   /** Advances a landlord through the verification pipeline. */
   setVerification: (status: VerificationStatus) => void
 }
@@ -99,13 +100,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await delay(700)
 
       const account: User = {
-        id: `${input.role}-${Date.now()}`,
+        id: `tenant-${Date.now()}`,
         fullName: input.fullName.trim(),
         email: input.email.trim().toLowerCase(),
         phone: normalisePhone(input.phone),
-        role: input.role,
-        // Landlords must clear identity + ownership checks before they can list.
-        verification: input.role === 'landlord' ? 'unverified' : undefined,
+        // Accounts always begin as tenants. Landlord access is granted only
+        // after the in-app verification flow is completed.
+        role: 'tenant',
         createdAt: new Date().toISOString(),
       }
 
@@ -185,6 +186,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [updateUser]
   )
 
+  const becomeLandlord = useCallback(
+    () => updateUser({ role: 'landlord', verification: 'verified' }),
+    [updateUser]
+  )
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -195,9 +201,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signOut,
       updateUser,
+      becomeLandlord,
       setVerification,
     }),
-    [user, hydrated, pending, signIn, signUp, signOut, updateUser, setVerification]
+    [user, hydrated, pending, signIn, signUp, signOut, updateUser, becomeLandlord, setVerification]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

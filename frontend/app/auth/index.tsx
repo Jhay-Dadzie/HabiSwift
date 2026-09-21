@@ -84,17 +84,12 @@ export default function Login() {
           {pending ? <ActivityIndicator color="#fff" /> : <ThemedText type="placeholderText">Sign in</ThemedText>}
         </Button>
 
-        <View style={styles.divider}>
-          <View style={[styles.line, { backgroundColor: theme.borderColor }]} />
-          <ThemedText style={{ color: theme.secondaryFontColor, fontSize: 12 }}>NEW TO HABISWIFT?</ThemedText>
-          <View style={[styles.line, { backgroundColor: theme.borderColor }]} />
+        <View style={styles.footer}>
+          <ThemedText style={{ color: theme.secondaryFontColor }}>Don&apos;t have an account?</ThemedText>
+          <Pressable onPress={() => router.replace('/auth/seekerSignUp')}>
+            <ThemedText style={{ color: theme.link, fontWeight: '800' }}> Create account</ThemedText>
+          </Pressable>
         </View>
-
-        <Pressable onPress={() => router.replace('/(onboarding)/role')} 
-          style={[styles.outlineButton, { borderColor: theme.borderColor, backgroundColor: theme.cardBackground }]}
-        >
-          <ThemedText style={{ color: theme.oppositeTextColor, fontWeight: '800' }}>Create an account</ThemedText>
-        </Pressable>
 
       </ScrollView>
     </KeyboardAvoidingView>
@@ -170,21 +165,9 @@ const styles = StyleSheet.create({
     marginBottom: 12, 
     lineHeight: 18 
   }, 
-  divider: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 10, 
-    marginVertical: 26 
-  }, 
-  line: { 
-    height: 1, 
-    flex: 1 
-  }, 
-  outlineButton: { 
-    minHeight: 54, 
-    borderRadius: 27, 
-    borderWidth: 1, 
-    alignItems: 'center', 
-    justifyContent: 'center' 
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 24
   }
 })
