@@ -1,0 +1,1 @@
+//Shared enums: listing status, payment type(monthly, yearly), roles
