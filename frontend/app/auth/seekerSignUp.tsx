@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native'
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Check, Eye, EyeOff, LockKeyhole, Mail, Phone, UserRound } from 'lucide-react-native'
@@ -8,37 +8,15 @@ import { ThemedText } from '@/components/themed-text'
 import Button from '@/components/button'
 import { Colors } from '@/constants/theme'
 import usePageThemeRender from '@/components/globalStyles/pageThemeRender'
-import { AuthError, homeRouteFor, useAuth } from '@/contexts/AuthContext'
-import { assessPassword, validateConfirmPassword, validateEmail, validateFullName, validatePhone, validatePassword } from '@/utils/validation'
+import { assessPassword } from '@/utils/validation'
 
 export default function SeekerSignUp() {
-  const router = useRouter(); const theme = usePageThemeRender(); const { signUp, pending } = useAuth()
+  const router = useRouter(); const theme = usePageThemeRender()
   const [form, setForm] = useState({ fullName: '', email: '', phone: '', password: '', confirm: '' }); 
   const [visible, setVisible] = useState(false); 
-  const [agreed, setAgreed] = useState(false); const [error, setError] = useState('')
+  const [agreed, setAgreed] = useState(false)
   const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }))
-  const submit = async () => {
-    const errors = [
-      validateFullName(form.fullName), 
-      validateEmail(form.email), validatePhone(form.phone), 
-      validatePassword(form.password), 
-      validateConfirmPassword(form.password)(form.confirm)
-    ]
-    if (errors.some(Boolean)) { setError(errors.find(Boolean) || 'Check your details'); return }
-    if (!agreed) { setError('Accept the terms to continue'); return }
-    setError('')
-    try { 
-      const user = await signUp({ 
-        fullName: form.fullName, 
-        email: form.email, 
-        phone: form.phone, 
-        password: form.password 
-      }); 
-      router.replace(homeRouteFor(user.role)) 
-    } catch (err) {  
-      setError(err instanceof AuthError ? err.message : 'Unable to create your account right now') 
-    }
-  }
+  const submit = () => router.replace('/(tenantScreens)')
   const password = assessPassword(form.password)
   return (
   <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
@@ -121,12 +99,8 @@ export default function SeekerSignUp() {
           </ThemedText>
         </Pressable>
 
-        {
-          error ? <ThemedText style={[styles.error, { color: theme.danger }]}>{error}</ThemedText> : null
-        }
-
-        <Button action={submit} disabled={pending}>
-          {pending ? <ActivityIndicator color="#fff" /> : <ThemedText type="placeholderText">Create account</ThemedText>}
+        <Button action={submit}>
+          <ThemedText type="placeholderText">Create account</ThemedText>
         </Button>
         <View style={styles.footer}>
           <ThemedText style={{ color: theme.secondaryFontColor }}>Already have an account?</ThemedText>
@@ -238,7 +212,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     justifyContent: 'center' 
   }, 
-  error: { fontSize: 13, lineHeight: 18, marginVertical: 10 }, 
   footer: { 
     flexDirection: 'row', 
     justifyContent: 'center', 
