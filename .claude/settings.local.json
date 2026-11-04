@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(node *)",
+      "Bash(npx tsc *)",
+      "Bash(npx expo *)",
+      "Bash(grep -A3 -E \"listingCard|filterSheet|searchBar|chip.tsx|emptyState|tenantScreens|listing\\\\\\\\\\\\\\\\\\\\[id\\\\\\\\]|contexts|utils|use-color-scheme|use-debounced|_layout\")",
+      "Bash(python -)",
+      "Bash(echo \"=== TSC EXIT: $? ===\")",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(list\\(d.get\\('mcpServers',{}\\).keys\\(\\)\\)\\)\")",
+      "WebFetch(domain:www.figma.com)",
+      "PowerShell($sources = @{ Process = $env:FIGMA_TOKEN; User = [Environment]::GetEnvironmentVariable\\('FIGMA_TOKEN','User'\\); Machine = [Environment]::GetEnvironmentVariable\\('FIGMA_TOKEN','Machine'\\) }; foreach \\($k in $sources.Keys\\) { $v = $sources[$k]; if \\([string]::IsNullOrWhiteSpace\\($v\\)\\) { \"{0,-8} : \\(not set\\)\" -f $k } else { \"{0,-8} : set, {1} chars, starts {2}\" -f $k, $v.Length, $v.Substring\\(0,[Math]::Min\\(5,$v.Length\\)\\) } }; if \\(Test-Path .figma-token\\) { \"file .figma-token : present\" } else { \"file .figma-token : absent\" })",
+      "Bash(grep -iE \"^expo-\\(video|av|image-picker|video-thumbnails|file-system\\)$\")",
+      "Bash(echo \"=== exit $? ===\")",
+      "PowerShell($v = [Environment]::GetEnvironmentVariable\\('FIGMA_TOKEN','User'\\); if \\([string]::IsNullOrWhiteSpace\\($v\\)\\) { \"FIGMA_TOKEN: still not set\" } else { \"FIGMA_TOKEN: available \\({0} chars\\)\" -f $v.Length })"
+    ]
+  }
+}
