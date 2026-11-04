@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native'
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Eye, EyeOff, LockKeyhole, Mail, Phone } from 'lucide-react-native'
@@ -8,26 +8,15 @@ import { ThemedText } from '@/components/themed-text'
 import Button from '@/components/button'
 import { Colors } from '@/constants/theme'
 import usePageThemeRender from '@/components/globalStyles/pageThemeRender'
-import { useAuth, homeRouteFor, AuthError } from '@/contexts/AuthContext'
-import { validateEmailOrPhone, validatePassword } from '@/utils/validation'
 
 export default function Login() {
   const router = useRouter()
   const theme = usePageThemeRender()
-  const { signIn, pending } = useAuth()
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [visible, setVisible] = useState(false)
-  const [error, setError] = useState('')
 
-  const submit = async () => {
-    const identifierError = validateEmailOrPhone(identifier)
-    const passwordError = validatePassword(password)
-    if (identifierError || passwordError) { setError(identifierError || passwordError || 'Check your details'); return }
-    setError('')
-    try { const user = await signIn(identifier, password); router.replace(homeRouteFor(user.role)) }
-    catch (err) { setError(err instanceof AuthError ? err.message : 'Unable to sign in right now') }
-  }
+  const submit = () => router.replace('/(tenantScreens)')
 
   return (
   <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
@@ -76,12 +65,8 @@ export default function Login() {
           <ThemedText style={{ color: theme.link, fontWeight: '700' }}>Forgot password?</ThemedText>
         </Pressable>
         
-        {
-          error ? <ThemedText style={[styles.error, { color: theme.danger }]}>{error}</ThemedText> : null
-        }
-
-        <Button action={submit} disabled={pending}>
-          {pending ? <ActivityIndicator color="#fff" /> : <ThemedText type="placeholderText">Sign in</ThemedText>}
+        <Button action={submit}>
+          <ThemedText type="placeholderText">Sign in</ThemedText>
         </Button>
 
         <View style={styles.footer}>
@@ -159,11 +144,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end', 
     marginTop: -2, 
     marginBottom: 16 
-  }, 
-  error: { 
-    fontSize: 13, 
-    marginBottom: 12, 
-    lineHeight: 18 
   }, 
   footer: {
     flexDirection: 'row',
