@@ -36,7 +36,7 @@ export default function OwnershipProof() {
     const router = useRouter()
     const colorScheme = useColorScheme()
     const colorThemeRenderer = usePageThemeRender()
-    const { setVerification } = useAuth()
+    const { becomeLandlord } = useAuth()
     const dimension = Dimensions.get('window').width
 
     const [progress, setProgress] = useState(0.75)
@@ -141,14 +141,12 @@ export default function OwnershipProof() {
         }
         Toast.show({
             type: 'success',
-            text1: 'Sign up successful',
+            text1: 'Landlord verification complete',
             position: 'bottom',
             visibilityTime: 1800,
         })
-        // The verification screens are a local frontend flow for now. Treat a
-        // completed submission as verified so a landlord can immediately
-        // exercise the listing experience while the API is still pending.
-        setVerification('verified')
+        // Accounts stay tenants until this verification flow is completed.
+        becomeLandlord()
         router.replace('/(landlordScreens)')
     }
 
@@ -291,7 +289,7 @@ export default function OwnershipProof() {
 
                 <Button action={handleSubmit} disabled={!selectedFile || !isConfirmed}>
                     <ThemedText type="placeholderText">
-                        {isConfirmed ? 'Finish Signup' : 'Confirm File First'}
+                        {isConfirmed ? 'Complete verification' : 'Confirm File First'}
                     </ThemedText>
                 </Button>
 
