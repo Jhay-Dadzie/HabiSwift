@@ -1,14 +1,17 @@
-import { StyleSheet } from 'react-native'
-import { ThemedText } from '@/components/themed-text'
-import { ThemedView } from '@/components/themed-view'
 import React from 'react'
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { ChevronRight, CircleHelp, LogOut, Moon, ShieldCheck, UserRound } from 'lucide-react-native'
+import { useRouter } from 'expo-router'
 
-export default function Profile() {
-  return (
-    <ThemedView style={{flex: 1}}>
-      <ThemedText>This is landlord's profile screen</ThemedText>
-    </ThemedView>
-  )
+import { ThemedText } from '@/components/themed-text'
+import usePageThemeRender from '@/components/globalStyles/pageThemeRender'
+import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
+
+export default function LandlordProfile() {
+  const theme = usePageThemeRender(); const router = useRouter(); const { user, signOut } = useAuth(); const { toggleTheme } = useTheme()
+  return <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}><ScrollView contentContainerStyle={styles.content}><View style={styles.profile}><View style={styles.avatar}><ThemedText style={styles.avatarText}>{(user?.fullName ?? 'L').charAt(0).toUpperCase()}</ThemedText></View><ThemedText style={[styles.name, { color: theme.oppositeTextColor }]}>{user?.fullName ?? 'Landlord account'}</ThemedText><ThemedText style={{ color: theme.secondaryFontColor }}>{user?.email ?? 'No email added'}</ThemedText><View style={styles.verified}><ShieldCheck size={15} color="#16A34A" /><ThemedText style={{ color: '#16A34A', fontSize: 12, fontWeight: '700' }}>{user?.verification === 'verified' ? 'Verified landlord' : 'Verification pending'}</ThemedText></View></View><ThemedText style={[styles.section, { color: theme.secondaryFontColor }]}>ACCOUNT</ThemedText><Menu icon={<UserRound size={19} color={theme.link} />} title="Personal details" subtitle="Name, phone number and email" theme={theme} /><Menu icon={<ShieldCheck size={19} color={theme.link} />} title="Verification status" subtitle={user?.verification === 'verified' ? 'Your account is verified' : 'Complete your verification'} theme={theme} /><ThemedText style={[styles.section, { color: theme.secondaryFontColor }]}>PREFERENCES</ThemedText><Pressable onPress={toggleTheme} style={[styles.menu, { backgroundColor: theme.cardBackground, borderColor: theme.borderColor }]}><View style={styles.menuIcon}><Moon size={19} color={theme.link} /></View><View style={{ flex: 1 }}><ThemedText style={{ color: theme.oppositeTextColor, fontWeight: '700' }}>Appearance</ThemedText><ThemedText style={{ color: theme.secondaryFontColor, fontSize: 12, marginTop: 3 }}>Switch between light and dark mode</ThemedText></View><ChevronRight size={18} color={theme.icon} /></Pressable><ThemedText style={[styles.section, { color: theme.secondaryFontColor }]}>SUPPORT</ThemedText><Menu icon={<CircleHelp size={19} color={theme.link} />} title="Help center" subtitle="Get help with your listings" theme={theme} /><Pressable onPress={async () => { await signOut(); router.replace('/auth') }} style={[styles.signOut, { borderColor: theme.borderColor }]}><LogOut size={18} color="#DC2626" /><ThemedText style={{ color: '#DC2626', fontWeight: '800' }}>Sign out</ThemedText></Pressable></ScrollView></SafeAreaView>
 }
-
-const styles = StyleSheet.create({})
+function Menu({ icon, title, subtitle, theme }: { icon: React.ReactNode; title: string; subtitle: string; theme: ReturnType<typeof usePageThemeRender> }) { return <Pressable style={[styles.menu, { backgroundColor: theme.cardBackground, borderColor: theme.borderColor }]}><View style={styles.menuIcon}>{icon}</View><View style={{ flex: 1 }}><ThemedText style={{ color: theme.oppositeTextColor, fontWeight: '700' }}>{title}</ThemedText><ThemedText style={{ color: theme.secondaryFontColor, fontSize: 12, marginTop: 3 }}>{subtitle}</ThemedText></View><ChevronRight size={18} color={theme.icon} /></Pressable> }
+const styles = StyleSheet.create({ screen: { flex: 1 }, content: { paddingHorizontal: 18, paddingBottom: 32 }, profile: { alignItems: 'center', paddingVertical: 24 }, avatar: { width: 82, height: 82, borderRadius: 41, backgroundColor: '#E7E4FF', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }, avatarText: { color: '#241A7F', fontSize: 32, fontWeight: '900' }, name: { fontSize: 22, fontWeight: '900', marginBottom: 4 }, verified: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 12 }, section: { fontSize: 11, letterSpacing: 1.2, fontWeight: '800', marginTop: 18, marginBottom: 8 }, menu: { minHeight: 66, borderRadius: 16, borderWidth: 1, padding: 13, flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 8 }, menuIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F0EEFF' }, signOut: { minHeight: 52, borderWidth: 1, borderRadius: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 7, marginTop: 22 } })

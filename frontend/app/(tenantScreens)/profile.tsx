@@ -1,7 +1,7 @@
 import { StyleSheet, ScrollView, View, TouchableOpacity, Switch, Image } from 'react-native'
 import { ThemedText } from '@/components/themed-text'
 import { ThemedView } from '@/components/themed-view'
-import React, { useState } from 'react'
+import React from 'react'
 import usePageThemeRender from '@/components/globalStyles/pageThemeRender'
 import { Colors } from '@/constants/theme'
 import { useColorScheme } from '@/hooks/use-color-scheme'
@@ -10,6 +10,7 @@ import { useRouter } from 'expo-router'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { PageStyles } from '@/components/globalStyles/pageStyles'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface MenuItem {
   id: string
@@ -26,10 +27,9 @@ export default function Profile() {
   const colorScheme = useColorScheme()
   const { toggleTheme } = useTheme()
   const router = useRouter()
+  const { user, signOut } = useAuth()
   const colors = Colors[colorScheme ?? 'light']
   const isLight = colorScheme === 'light'
-
-  const [landlordToggle, setLandlordToggle] = useState(false)
 
   const accountMenuItems: MenuItem[] = [
     {
@@ -171,7 +171,7 @@ export default function Profile() {
               },
             ]}
           >
-            Joseph Adebayo
+            {user?.fullName ?? 'Your profile'}
           </ThemedText>
           <ThemedText
             style={[
@@ -181,13 +181,13 @@ export default function Profile() {
               },
             ]}
           >
-            joseph.adebayo@example.com
+            {user?.email ?? 'Sign in to sync your account'}
           </ThemedText>
         </View>
 
-        {/* Switch to Landlord Card */}
+        {/* Become a Landlord Card */}
         <TouchableOpacity
-          onPress={() => router.push('/(landlordScreens)')}
+          onPress={() => router.push('/auth/cardIdentity')}
           activeOpacity={0.9}
           style={[
             styles.landlordCard,
@@ -209,7 +209,7 @@ export default function Profile() {
                   { color: '#fff' },
                 ]}
               >
-                Switch to Landlord
+                Become a Landlord
               </ThemedText>
               <ThemedText
                 
@@ -217,27 +217,11 @@ export default function Profile() {
                   { color: 'rgba(255, 255, 255, 0.8)' },
                 ]}
               >
-                List your property today
+                Verify your ownership to list a property
               </ThemedText>
             </View>
           </View>
-          <Switch
-            value={landlordToggle}
-            onValueChange={(value) => {
-              setLandlordToggle(value)
-              // The toggle was inert; send the user to the landlord tabs and
-              // flip back so the control reflects where they actually are.
-              if (value) {
-                router.push('/(landlordScreens)')
-                setLandlordToggle(false)
-              }
-            }}
-            thumbColor={landlordToggle ? '#6366F1' : '#fff'}
-            trackColor={{
-              false: 'rgba(255, 255, 255, 0.3)',
-              true: 'rgba(99, 102, 241, 0.3)',
-            }}
-          />
+          <MaterialCommunityIcons name="chevron-right" size={26} color="#fff" />
         </TouchableOpacity>
 
         {/* Account Section */}
@@ -290,6 +274,16 @@ export default function Profile() {
             )}
           </View>
         </View>
+
+        <TouchableOpacity
+          onPress={async () => {
+            await signOut()
+            router.replace('/auth')
+          }}
+          style={[styles.signOutButton, { borderColor: colors.borderColor }]}
+        >
+          <ThemedText style={{ color: '#DC2626', fontWeight: '700' }}>Sign out</ThemedText>
+        </TouchableOpacity>
       </ScrollView>
     </ThemedView>
   )
@@ -400,5 +394,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     marginLeft: 16,
+  },
+  signOutButton: {
+    minHeight: 50,
+    borderWidth: 1,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 32,
   },
 })
